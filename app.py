@@ -102,8 +102,7 @@ if st.session_state.historique:
 
     nom_filtre = st.selectbox("Filtrer par nom", options=["Tous"] + list(noms_disponibles))
     date_filtre = st.selectbox("Filtrer par date", options=["Toutes"] + list(dates_disponibles))
-
-            df_result["Date"] = pd.to_datetime(df_result["Date"])
+    df_result["Date"] = pd.to_datetime(df_result["Date"])
     df_result["Date"] = df_result["Date"].dt.strftime("%d.%m.%Y")
 
     df_filtré = df_result.copy()
