@@ -1,4 +1,5 @@
-jour_en = pd.Timestamp(date).day_name().lower()jours_fr = {
+jour_en = pd.Timestamp(date).day_name().lower()
+    jours_fr = {
         "monday": "Lundi",
         "tuesday": "Mardi",
         "wednesday": "Mercredi",
