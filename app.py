@@ -13,14 +13,22 @@ if "historique" not in st.session_state:
 if "index_a_supprimer" not in st.session_state:
     st.session_state.index_a_supprimer = None
 
-def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin):
+def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     fmt = "%H:%M"
     h_debut = datetime.strptime(heure_debut, fmt)
     h_fin = datetime.strptime(heure_fin, fmt)
     if h_fin <= h_debut:
         h_fin += timedelta(days=1)
 
-    total_heures = (h_fin - h_debut).total_seconds() / 3600
+    heures_brutes = (h_fin - h_debut).total_seconds() / 3600
+    total_heures = heures_brutes - pause
+    fmt = "%H:%M"
+    h_debut = datetime.strptime(heure_debut, fmt)
+    h_fin = datetime.strptime(heure_fin, fmt)
+    if h_fin <= h_debut:
+        h_fin += timedelta(days=1)
+
+    total_heures = (h_fin - h_debut).total_seconds() / 3600 - pause
 
     heure = h_debut
     heures_nuit = 0
@@ -40,6 +48,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin):
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
 
     return {
+        "Heures brutes": round(heures_brutes, 2),
+        "Pause (h)": pause,
         "Nom": nom,
         "Date": date,
         "Jour": jour_semaine,
@@ -60,12 +70,32 @@ with st.form("salaire_form"):
     tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
     heure_debut = st.time_input("Heure de début")
     heure_fin = st.time_input("Heure de fin")
+    pause = st.number_input("Durée de la pause (en heures)", min_value=0.0, max_value=5.0, step=0.25)
     submitted = st.form_submit_button("Ajouter au tableau")
 
     if submitted:
-        result = calcul_salaire(nom, date, tarif, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"))
+        result = calcul_salaire(nom, date, tarif, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause)
         st.session_state.historique.append(result)
         st.success("Calcul ajouté au tableau !")
+        # Affichage coloré selon le jour
+        if result['Jour'] == "sunday":
+            color = "#ffdddd"
+        elif result['Jour'] == "saturday":
+            color = "#fff5cc"
+        elif result['Heures de nuit'] > 0:
+            color = "#ddeeff"
+        else:
+            color = "#f0f0f0"
+
+        st.markdown(f"""
+        <div style='background-color:{color};padding:15px;border-radius:10px'>
+        <strong>Résumé :</strong><br>
+        - Heures brutes : <strong>{result['Heures brutes']} h</strong><br>
+        - Pause : <strong>{result['Pause (h)']} h</strong><br>
+        - Heures totales : <strong>{result['Heures totales']} h</strong><br>
+        - Salaire brut : <strong>CHF {result['Salaire total brut']}</strong><br>
+        </div>
+        """, unsafe_allow_html=True)
 
 if st.session_state.historique:
     df_result = pd.DataFrame(st.session_state.historique)
