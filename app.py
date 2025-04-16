@@ -101,5 +101,60 @@ with st.form("formulaire"):
 if data:
     df_result = pd.DataFrame(data)
     st.dataframe(df_result, use_container_width=True)
+
+    # --- Téléchargement Excel ---
+    import io
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name='Salaires')
+        workbook  = writer.book
+        worksheet = writer.sheets['Salaires']
+        for i, col in enumerate(df_result.columns):
+            column_len = max(df_result[col].astype(str).map(len).max(), len(col)) + 1
+            worksheet.set_column(i, i, column_len)
+        worksheet.freeze_panes(1, 0)
+
+    st.download_button(
+        label="📥 Télécharger le tableau en Excel",
+        data=output.getvalue(),
+        file_name='salaires_manpower.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+    # --- Téléchargement PDF ---
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+    col_width = pdf.w / 5.5
+    row_height = pdf.font_size * 1.5
+
+    for i, column in enumerate(df_result.columns):
+        pdf.cell(col_width, row_height, txt=column, border=1)
+    pdf.ln(row_height)
+
+    for _, row in df_result.iterrows():
+        for item in row:
+            pdf.cell(col_width, row_height, txt=str(item), border=1)
+        pdf.ln(row_height)
+
+    pdf_buffer = io.BytesIO()
+    pdf.output(pdf_buffer)
+    st.download_button(
+        label="📄 Télécharger tout en PDF",
+        data=pdf_buffer.getvalue(),
+        file_name="salaires_manpower.pdf",
+        mime="application/pdf"
+    )
+
+    ,
+        file_name='salaires_manpower.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 else:
     st.info("Aucune donnée enregistrée.")
+
+,
+        file_name='salaires_manpower.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )""
