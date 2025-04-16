@@ -106,8 +106,8 @@ with st.form("formulaire"):
             - Salaire brut : <strong>CHF {:.2f}</strong><br>
             - Majoration 25% (heure sup) : <strong>CHF {:.2f} / h</strong><br>
             - Heures sup : <strong>{}</strong><br>
-            - Heures dimanche : <strong>{:.2f} h</strong><br>
-            - Heures samedi : <strong>{:.2f} h</strong>
+            - Heures dimanche : <strong>{}</strong><br>
+            - Heures samedi : <strong>{}</strong>
             - Heures de nuit : <strong>{:.2f} h</strong><br>
             - Majoration nuit : <strong>CHF {:.2f}</strong>
             </div>
@@ -118,8 +118,8 @@ with st.form("formulaire"):
             result["Salaire total brut"],
             result["Majoration 25%"],
             result["Heures sup (>9h30)"],
-            result["Heures totales"] if result["Jour"] == "Dimanche" else 0.0,
-            result["Heures totales"] if result["Jour"] == "Samedi" else 0.0,
+            (f"{int(result['Heures totales'])}:{int((result['Heures totales'] % 1) * 60):02d}" if result["Jour"] == "Dimanche" else "0:00"),
+            (f"{int(result['Heures totales'])}:{int((result['Heures totales'] % 1) * 60):02d}" if result["Jour"] == "Samedi" else "0:00"),
             result["Heures de nuit"],
             result["Majoration nuit"]
         ), unsafe_allow_html=True)
