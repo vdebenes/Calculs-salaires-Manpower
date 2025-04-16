@@ -51,7 +51,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
     majoration_ratio = round(total_brut / salaire_base, 3) if salaire_base > 0 else 1.0
-        return {
+    return {
         "Heure de début": heure_debut,
         "Heure de fin": heure_fin,
         "Heures brutes": round(heures_brutes, 2),
