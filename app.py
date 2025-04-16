@@ -7,6 +7,8 @@ from fpdf import FPDF
 st.title("Calculateur de salaire avec majorations")
 
 # Initialiser une session pour stocker les résultats
+if "tarifs_par_nom" not in st.session_state:
+    st.session_state.tarifs_par_nom = {}
 if "historique" not in st.session_state:
     st.session_state.historique = []
 
@@ -74,14 +76,16 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
 
 with st.form("salaire_form"):
     nom = st.text_input("Nom du collaborateur")
+    tarif_default = st.session_state.tarifs_par_nom.get(nom, 0.0)
     date = st.date_input("Date")
-    tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+    tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=tarif_default)
     heure_debut = st.time_input("Heure de début")
     heure_fin = st.time_input("Heure de fin")
     pause = st.number_input("Durée de la pause (en heures)", min_value=0.0, max_value=5.0, step=0.25, help="Exemples : 0.25 = 15 minutes, 0.5 = 30 minutes, 1.0 = 1 heure")
     submitted = st.form_submit_button("Ajouter au tableau")
 
     if submitted:
+        st.session_state.tarifs_par_nom[nom] = tarif
         result = calcul_salaire(nom, date, tarif, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause)
         st.session_state.historique.append(result)
         st.success("Calcul ajouté au tableau !")
