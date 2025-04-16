@@ -51,6 +51,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
 
+        majoration_ratio = round(total_brut / salaire_base, 3) if salaire_base > 0 else 1.0
     return {
         "Heures brutes": round(heures_brutes, 2),
         "Pause (h)": pause,
@@ -65,7 +66,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Majoration nuit": maj_nuit,
         "Majoration heures sup": maj_sup,
         "Salaire de base": salaire_base,
-        "Salaire total brut": total_brut
+        "Salaire total brut": total_brut,
+        "Tarif horaire": tarif_horaire,
+        "Facteur de majoration": majoration_ratio
     }
 
 with st.form("salaire_form"):
@@ -74,7 +77,7 @@ with st.form("salaire_form"):
     tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
     heure_debut = st.time_input("Heure de début")
     heure_fin = st.time_input("Heure de fin")
-    pause = st.number_input("Durée de la pause (en heures)", min_value=0.0, max_value=5.0, step=0.25)
+    pause = st.number_input("Durée de la pause (en heures)", min_value=0.0, max_value=5.0, step=0.25, help="Exemples : 0.25 = 15 minutes, 0.5 = 30 minutes, 1.0 = 1 heure")
     submitted = st.form_submit_button("Ajouter au tableau")
 
     if submitted:
@@ -112,6 +115,10 @@ if st.session_state.historique:
     date_filtre = st.selectbox("Filtrer par date", options=["Toutes"] + list(dates_disponibles))
     df_result["Date"] = pd.to_datetime(df_result["Date"])
     df_result["Date"] = df_result["Date"].dt.strftime("%d.%m.%Y")
+
+    # Réorganiser les colonnes : Nom, Date en premier
+    colonnes_ordre = ["Nom", "Date"] + [col for col in df_result.columns if col not in ["Nom", "Date"]]
+    df_result = df_result[colonnes_ordre]
 
     df_filtré = df_result.copy()
     if nom_filtre != "Tous":
