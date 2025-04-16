@@ -100,8 +100,8 @@ if st.session_state.historique:
     # Export Excel de l'historique filtré
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
-        writer.save()
+    df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
+
     st.download_button(
         label="📥 Télécharger tout en Excel",
         data=buffer,
