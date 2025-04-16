@@ -92,7 +92,12 @@ with st.form("salaire_form"):
     tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=tarif_default)
     heure_debut = st.time_input("Heure de début")
     heure_fin = st.time_input("Heure de fin")
-    pause = st.number_input("Durée de la pause (en heures)", min_value=0.0, max_value=5.0, step=0.25, help="Exemples : 0.25 = 15 minutes, 0.5 = 30 minutes, 1.0 = 1 heure")
+    pause_str = st.text_input("Durée de la pause (hh:mm)", help="Exemple : 0:30 pour 30 minutes, 2:10 pour 2h10")
+    try:
+        h, m = map(int, pause_str.split(":"))
+        pause = h + m / 60
+    except:
+        pause = 0.0
     submitted = st.form_submit_button("Ajouter au tableau")
 
     if submitted:
@@ -165,7 +170,12 @@ if st.session_state.historique:
 
         new_tarif = st.number_input("Nouveau tarif horaire", value=selected_data["Tarif horaire"], step=0.05)
         new_date = st.date_input("Nouvelle date", value=pd.to_datetime(selected_data["Date"]))
-        new_pause = st.number_input("Nouvelle pause (h)", value=selected_data["Pause (h)"], step=0.25)
+        new_pause_str = st.text_input("Nouvelle pause (hh:mm)", value=f"{int(selected_data['Pause (h)'])}:{int(round((selected_data['Pause (h)']%1)*60))}")
+        try:
+            h, m = map(int, new_pause_str.split(":"))
+            new_pause = h + m / 60
+        except:
+            new_pause = selected_data['Pause (h)']"], step=0.25)
         new_debut = st.time_input("Nouvelle heure de début", value=datetime.strptime(selected_data["Heure de début"], "%H:%M").time())
         new_fin = st.time_input("Nouvelle heure de fin", value=datetime.strptime(selected_data["Heure de fin"], "%H:%M").time())
 
