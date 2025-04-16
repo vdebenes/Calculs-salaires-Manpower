@@ -132,33 +132,7 @@ if data:
     ]]
     st.dataframe(df_result, use_container_width=True)
 
-    st.markdown("### 📊 Récapitulatif des montants clés")
-    total_base = df_result["Salaire de base"].sum()
-    total_sup = df_result["Majoration heures sup"].sum()
-    total_nuit = df_result["Majoration nuit"].sum()
-    total_samedi = df_result["Majoration samedi"].sum()
-    total_dimanche = df_result["Majoration dimanche"].sum()
-    total_brut = df_result["Salaire total brut"].sum()
-
-    recap = pd.DataFrame({
-        "Type": [
-            "Salaire de base",
-            "Majoration heures sup",
-            "Majoration nuit",
-            "Majoration samedi",
-            "Majoration dimanche",
-            "Salaire total brut"
-        ],
-        "Montant total (CHF)": [
-            round(total_base, 2),
-            round(total_sup, 2),
-            round(total_nuit, 2),
-            round(total_samedi, 2),
-            round(total_dimanche, 2),
-            round(total_brut, 2)
-        ]
-    })
-    st.dataframe(recap, use_container_width=True)
+    
 
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -177,29 +151,7 @@ if data:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=10)
-    col_width = pdf.w / 5.5
-    row_height = pdf.font_size * 1.5
-
-    for column in df_result.columns:
-        pdf.cell(col_width, row_height, txt=column, border=1)
-    pdf.ln(row_height)
-
-    for _, row in df_result.iterrows():
-        for item in row:
-            pdf.cell(col_width, row_height, txt=str(item), border=1)
-        pdf.ln(row_height)
-
-    pdf_buffer = io.BytesIO()
-    pdf_bytes = pdf.output(dest='S').encode('latin1')
-    pdf_buffer.write(pdf_bytes)
-    pdf_buffer.seek(0)
-
-    st.download_button(
-        label="📄 Télécharger tout en PDF",
-        data=pdf_buffer.getvalue(),
+    ,
         file_name="salaires_manpower.pdf",
         mime="application/pdf"
     )
