@@ -22,13 +22,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
 
     heures_brutes = (h_fin - h_debut).total_seconds() / 3600
     total_heures = heures_brutes - pause
-    fmt = "%H:%M"
-    h_debut = datetime.strptime(heure_debut, fmt)
-    h_fin = datetime.strptime(heure_fin, fmt)
-    if h_fin <= h_debut:
-        h_fin += timedelta(days=1)
-
-    total_heures = (h_fin - h_debut).total_seconds() / 3600 - pause
+    
 
     heure = h_debut
     heures_nuit = 0
