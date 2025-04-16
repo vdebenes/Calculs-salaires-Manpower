@@ -23,9 +23,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heures_nuit = 0.0
     current = heure_debut
     while current < heure_fin:
-        if current.time() >= time(23, 0) or current.time() < time(6, 0):
-            next_point = min(heure_fin, datetime.combine(current.date(), time(6, 0)) if current.time() < time(6, 0) else current + timedelta(minutes=1))
-            heures_nuit += (min(next_point, heure_fin) - current).total_seconds() / 3600
+        h = current.time()
+        if h >= time(23, 0) or h < time(6, 0):
+            heures_nuit += 1 / 60  # 1 minute = 1/60 heure
         current += timedelta(minutes=1)
 
     jour_en = pd.Timestamp(date).day_name().lower()
@@ -108,6 +108,8 @@ with st.form("formulaire"):
             - Heures sup : <strong>{}</strong><br>
             - Heures dimanche : <strong>{:.2f} h</strong><br>
             - Heures samedi : <strong>{:.2f} h</strong>
+            - Heures de nuit : <strong>{:.2f} h</strong><br>
+            - Majoration nuit : <strong>CHF {:.2f}</strong>
             </div>
         """.format(
             result["Heures brutes"],
@@ -117,7 +119,9 @@ with st.form("formulaire"):
             result["Majoration 25%"],
             result["Heures sup (>9h30)"],
             result["Heures totales"] if result["Jour"] == "Dimanche" else 0.0,
-            result["Heures totales"] if result["Jour"] == "Samedi" else 0.0
+            result["Heures totales"] if result["Jour"] == "Samedi" else 0.0,
+            result["Heures de nuit"],
+            result["Majoration nuit"]
         ), unsafe_allow_html=True)
 
 if data:
