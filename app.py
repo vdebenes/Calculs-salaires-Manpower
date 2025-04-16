@@ -97,13 +97,28 @@ with st.form("formulaire"):
         data.append(result)
         st.session_state["data"] = data
 
-        st.success("Calcul ajouté au tableau !")
-        with st.container(border=True):
-            st.markdown("**Résumé :**")
-            st.markdown(f"- **Heures brutes** : {result['Heures brutes']} h")
-            st.markdown(f"- **Pause** : {result['Pause (h)']} h")
-            st.markdown(f"- **Heures totales** : {result['Heures totales']} h")
-            st.markdown(f"- **Salaire brut** : **CHF {result['Salaire total brut']}**")
+        st.markdown("""
+            <div style='background-color:#ffe6e6;padding:10px;border-radius:5px;'>
+            <strong>Résumé :</strong><br>
+            - Heures brutes : <strong>{:.2f} h</strong><br>
+            - Pause : <strong>{:.1f} h</strong><br>
+            - Heures totales : <strong>{:.2f} h</strong><br>
+            - Salaire brut : <strong>CHF {:.2f}</strong><br>
+            - Majoration 25% (heure sup) : <strong>CHF {:.2f} / h</strong><br>
+            - Heures sup : <strong>{}</strong><br>
+            - Heures dimanche : <strong>{:.2f} h</strong><br>
+            - Heures samedi : <strong>{:.2f} h</strong>
+            </div>
+        """.format(
+            result["Heures brutes"],
+            result["Pause (h)"],
+            result["Heures totales"],
+            result["Salaire total brut"],
+            result["Majoration 25%"],
+            result["Heures sup (>9h30)"],
+            result["Heures totales"] if result["Jour"] == "Dimanche" else 0.0,
+            result["Heures totales"] if result["Jour"] == "Samedi" else 0.0
+        ), unsafe_allow_html=True)
 
 if data:
     df_result = pd.DataFrame(data)[[
