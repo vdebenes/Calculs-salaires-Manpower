@@ -109,7 +109,7 @@ if st.session_state.historique:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    # Export PDF de l'historique filtré
+    # Export PDF de l'historique filtré (corrigé)
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=10)
@@ -119,9 +119,8 @@ if st.session_state.historique:
         for key, value in row.items():
             pdf.cell(200, 8, txt=f"{key}: {value}", ln=True)
         pdf.ln(4)
-    pdf_buffer = io.BytesIO()
-    pdf.output(pdf_buffer)
-    pdf_buffer.seek(0)
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    pdf_buffer = io.BytesIO(pdf_bytes)
 
     st.download_button(
         label="📄 Télécharger tout en PDF",
