@@ -191,8 +191,3 @@ if st.session_state.historique:
         file_name="salaires_historique.pdf",
         mime="application/pdf"
     )
-        label="📄 Télécharger tout en PDF",
-        data=pdf_buffer,
-        file_name="salaires_historique.pdf",
-        mime="application/pdf"
-    )
