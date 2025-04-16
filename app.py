@@ -34,9 +34,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heures_sup = max(0, total_heures - 9.5)
 
     salaire_base = round(total_heures * tarif_horaire, 2)
-    import locale
-    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
-    jour_semaine = pd.Timestamp(date).strftime("%A").capitalize()
+    jour_semaine = pd.Timestamp(date).day_name(locale='fr_FR').capitalize()
     maj_dimanche = 4.80 * total_heures if jour_semaine == "sunday" else 0
     maj_samedi = 2.40 * total_heures if jour_semaine == "saturday" else 0
     maj_nuit = round(heures_nuit * 8.4, 2)
