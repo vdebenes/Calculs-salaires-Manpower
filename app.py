@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta, time
+import io
+from fpdf import FPDF
 
 st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
 @st.cache_data
-
 def init_data():
     return []
 
@@ -45,7 +46,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     maj_samedi = round(2.40 * total_heures, 2) if jour_semaine == "Samedi" else 0
     maj_nuit = round(8.40 * heures_nuit, 2) if heures_nuit > 0 else 0
     total_brut = round(salaire_base + maj_sup + maj_dimanche + maj_samedi + maj_nuit, 2)
-    majoration_ratio = round(total_brut / salaire_base, 3) if salaire_base > 0 else 1.0
 
     heures_arrondies = int(total_heures)
     minutes = int((total_heures - heures_arrondies) * 60)
@@ -65,41 +65,18 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Heures brutes": round(heures_brutes, 2),
         "Heures totales": round(total_heures, 2),
         "Heures totales arrondies": round(total_heures_arrondies, 2),
-        "Salaire de base": salaire_base,
+        "Heures de nuit": round(heures_nuit, 2),
+        "Majoration nuit": maj_nuit,
         "Heures sup (>9h30)": f"{int(heures_sup)}:{int((heures_sup % 1)*60):02d}",
         "Majoration 25%": round(tarif_horaire * 0.25, 2),
         "Majoration heures sup": maj_sup,
-        "Heures de nuit": round(heures_nuit, 2),
-        "Majoration nuit": maj_nuit,
-        "Majoration samedi": maj_samedi,
-        "Majoration dimanche": maj_dimanche,
-        "Salaire total brut": total_brut
-    }:{int((heures_sup % 1)*60):02d}",
-        "Majoration 25%": round(tarif_horaire * 0.25, 2),
-        "Heures de nuit": round(heures_nuit, 2),
-        "Majoration nuit": maj_nuit,
-        "Majoration heures sup": maj_sup,
-        "Majoration samedi": maj_samedi,
-        "Majoration dimanche": maj_dimanche,
-        "Salaire total brut": total_brut
-    }:{int((heures_sup % 1)*60):02d}",
-        "Majoration heures sup": maj_sup,
         "Majoration samedi": maj_samedi,
         "Majoration dimanche": maj_dimanche,
         "Salaire de base": salaire_base,
         "Salaire total brut": total_brut
-    }:{int((heures_sup % 1)*60):02d}",
-        "Majoration dimanche": maj_dimanche,
-        "Majoration samedi": maj_samedi,
-        "Majoration nuit": maj_nuit,
-        "Majoration heures sup": maj_sup,
-        "Salaire de base": salaire_base,
-        "Salaire total brut": total_brut,
-        "Tarif horaire": tarif_horaire,
-        "Majoration 25%": round(tarif_horaire * 0.25, 2)
     }
 
-st.title("🧾 Calculateur de salaire Manpower")
+st.title("🗞 Calculateur de salaire Manpower")
 data = st.session_state.get("data", init_data())
 
 with st.form("formulaire"):
@@ -120,19 +97,26 @@ with st.form("formulaire"):
         data.append(result)
         st.session_state["data"] = data
 
+        st.success("Calcul ajouté au tableau !")
+        with st.container(border=True):
+            st.markdown("**Résumé :**")
+            st.markdown(f"- **Heures brutes** : {result['Heures brutes']} h")
+            st.markdown(f"- **Pause** : {result['Pause (h)']} h")
+            st.markdown(f"- **Heures totales** : {result['Heures totales']} h")
+            st.markdown(f"- **Salaire brut** : **CHF {result['Salaire total brut']}**")
+
 if data:
     df_result = pd.DataFrame(data)[[
-        "Nom", "Tarif horaire", "Date", "Jour",
-        "Heure de début", "Heure de fin", "Pause (h)", "Heures brutes",
-        "Heures totales", "Heures totales arrondies", "Salaire de base",
+        "Nom", "Tarif horaire", "Date",
+        "Heures totales", "Heures totales arrondies",
+        "Heure de début", "Heure de fin", "Pause (h)", "Jour",
         "Heures sup (>9h30)", "Majoration 25%", "Majoration heures sup",
         "Heures de nuit", "Majoration nuit",
         "Majoration samedi", "Majoration dimanche",
-        "Salaire total brut"
+        "Salaire de base", "Salaire total brut"
     ]]
     st.dataframe(df_result, use_container_width=True)
 
-    # --- Récapitulatif global ---
     st.markdown("### 📊 Récapitulatif des montants clés")
     total_base = df_result["Salaire de base"].sum()
     total_sup = df_result["Majoration heures sup"].sum()
@@ -161,12 +145,10 @@ if data:
     })
     st.dataframe(recap, use_container_width=True)
 
-    # --- Téléchargement Excel ---
-    import io
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df_result.to_excel(writer, index=False, sheet_name='Salaires')
-        workbook  = writer.book
+        workbook = writer.book
         worksheet = writer.sheets['Salaires']
         for i, col in enumerate(df_result.columns):
             column_len = max(df_result[col].astype(str).map(len).max(), len(col)) + 1
@@ -174,21 +156,19 @@ if data:
         worksheet.freeze_panes(1, 0)
 
     st.download_button(
-        label="📥 Télécharger le tableau en Excel",
+        label="📅 Télécharger le tableau en Excel",
         data=output.getvalue(),
         file_name='salaires_manpower.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    # --- Téléchargement PDF ---
-    from fpdf import FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=10)
     col_width = pdf.w / 5.5
     row_height = pdf.font_size * 1.5
 
-    for i, column in enumerate(df_result.columns):
+    for column in df_result.columns:
         pdf.cell(col_width, row_height, txt=column, border=1)
     pdf.ln(row_height)
 
@@ -201,6 +181,7 @@ if data:
     pdf_bytes = pdf.output(dest='S').encode('latin1')
     pdf_buffer.write(pdf_bytes)
     pdf_buffer.seek(0)
+
     st.download_button(
         label="📄 Télécharger tout en PDF",
         data=pdf_buffer.getvalue(),
