@@ -56,17 +56,39 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
 
     return {
         "Nom": nom,
+        "Tarif horaire": tarif_horaire,
         "Date": date,
+        "Jour": jour_semaine,
         "Heure de début": heure_debut.strftime("%H:%M"),
         "Heure de fin": heure_fin.strftime("%H:%M"),
-        "Heures brutes": round(heures_brutes, 2),
         "Pause (h)": pause,
-        "Jour": jour_semaine,
+        "Heures brutes": round(heures_brutes, 2),
         "Heures totales": round(total_heures, 2),
         "Heures totales arrondies": round(total_heures_arrondies, 2),
+        "Salaire de base": salaire_base,
+        "Heures sup (>9h30)": f"{int(heures_sup)}:{int((heures_sup % 1)*60):02d}",
+        "Majoration 25%": round(tarif_horaire * 0.25, 2),
+        "Majoration heures sup": maj_sup,
         "Heures de nuit": round(heures_nuit, 2),
-        "Heures sup (>9h30)": round(heures_sup, 4),
-        "Minutes sup (>9h30)": minutes_sup,
+        "Majoration nuit": maj_nuit,
+        "Majoration samedi": maj_samedi,
+        "Majoration dimanche": maj_dimanche,
+        "Salaire total brut": total_brut
+    }:{int((heures_sup % 1)*60):02d}",
+        "Majoration 25%": round(tarif_horaire * 0.25, 2),
+        "Heures de nuit": round(heures_nuit, 2),
+        "Majoration nuit": maj_nuit,
+        "Majoration heures sup": maj_sup,
+        "Majoration samedi": maj_samedi,
+        "Majoration dimanche": maj_dimanche,
+        "Salaire total brut": total_brut
+    }:{int((heures_sup % 1)*60):02d}",
+        "Majoration heures sup": maj_sup,
+        "Majoration samedi": maj_samedi,
+        "Majoration dimanche": maj_dimanche,
+        "Salaire de base": salaire_base,
+        "Salaire total brut": total_brut
+    }:{int((heures_sup % 1)*60):02d}",
         "Majoration dimanche": maj_dimanche,
         "Majoration samedi": maj_samedi,
         "Majoration nuit": maj_nuit,
@@ -99,8 +121,45 @@ with st.form("formulaire"):
         st.session_state["data"] = data
 
 if data:
-    df_result = pd.DataFrame(data)
+    df_result = pd.DataFrame(data)[[
+        "Nom", "Tarif horaire", "Date", "Jour",
+        "Heure de début", "Heure de fin", "Pause (h)", "Heures brutes",
+        "Heures totales", "Heures totales arrondies", "Salaire de base",
+        "Heures sup (>9h30)", "Majoration 25%", "Majoration heures sup",
+        "Heures de nuit", "Majoration nuit",
+        "Majoration samedi", "Majoration dimanche",
+        "Salaire total brut"
+    ]]
     st.dataframe(df_result, use_container_width=True)
+
+    # --- Récapitulatif global ---
+    st.markdown("### 📊 Récapitulatif des montants clés")
+    total_base = df_result["Salaire de base"].sum()
+    total_sup = df_result["Majoration heures sup"].sum()
+    total_nuit = df_result["Majoration nuit"].sum()
+    total_samedi = df_result["Majoration samedi"].sum()
+    total_dimanche = df_result["Majoration dimanche"].sum()
+    total_brut = df_result["Salaire total brut"].sum()
+
+    recap = pd.DataFrame({
+        "Type": [
+            "Salaire de base",
+            "Majoration heures sup",
+            "Majoration nuit",
+            "Majoration samedi",
+            "Majoration dimanche",
+            "Salaire total brut"
+        ],
+        "Montant total (CHF)": [
+            round(total_base, 2),
+            round(total_sup, 2),
+            round(total_nuit, 2),
+            round(total_samedi, 2),
+            round(total_dimanche, 2),
+            round(total_brut, 2)
+        ]
+    })
+    st.dataframe(recap, use_container_width=True)
 
     # --- Téléchargement Excel ---
     import io
