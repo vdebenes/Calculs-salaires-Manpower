@@ -139,8 +139,8 @@ if st.session_state.historique:
         selected_data = st.session_state.historique[index_to_edit - 1]
 
         new_tarif = st.number_input("Nouveau tarif horaire", value=selected_data["Tarif horaire"], step=0.05)
-        new_date = st.date_input("Nouvelle date", value=new_date)
-        new_pause = st.number_input("Nouvelle pause (h)", value=selected_data["Pause (h)"], step=0.25)"], step=0.25)
+        new_date = st.date_input("Nouvelle date", value=pd.to_datetime(selected_data["Date"]))
+        new_pause = st.number_input("Nouvelle pause (h)", value=selected_data["Pause (h)"], step=0.25)
         new_debut = st.time_input("Nouvelle heure de début", value=datetime.strptime(selected_data["Heure de début"], "%H:%M").time())
         new_fin = st.time_input("Nouvelle heure de fin", value=datetime.strptime(selected_data["Heure de fin"], "%H:%M").time())
 
