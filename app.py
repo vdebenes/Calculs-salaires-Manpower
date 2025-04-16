@@ -7,6 +7,17 @@ from fpdf import FPDF
 st.title("Calculateur de salaire avec majorations")
 
 # Initialiser une session pour stocker les résultats
+import json
+import os
+
+TARIFS_FILE = "tarifs_par_nom.json"
+
+# Charger les tarifs depuis un fichier s'ils existent
+if os.path.exists(TARIFS_FILE):
+    with open(TARIFS_FILE, "r") as f:
+        st.session_state.tarifs_par_nom = json.load(f)
+else:
+    st.session_state.tarifs_par_nom = {}
 if "tarifs_par_nom" not in st.session_state:
     st.session_state.tarifs_par_nom = {}
 if "historique" not in st.session_state:
@@ -86,6 +97,8 @@ with st.form("salaire_form"):
 
     if submitted:
         st.session_state.tarifs_par_nom[nom] = tarif
+        with open(TARIFS_FILE, "w") as f:
+            json.dump(st.session_state.tarifs_par_nom, f)
         result = calcul_salaire(nom, date, tarif, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause)
         st.session_state.historique.append(result)
         st.success("Calcul ajouté au tableau !")
@@ -111,6 +124,12 @@ with st.form("salaire_form"):
 
 if st.session_state.historique:
     df_result = pd.DataFrame(st.session_state.historique)
+
+    if st.button("🧹 Réinitialiser les tarifs mémorisés"):
+        st.session_state.tarifs_par_nom = {}
+        if os.path.exists(TARIFS_FILE):
+            os.remove(TARIFS_FILE)
+        st.success("Les tarifs mémorisés ont été réinitialisés.")
 
     st.subheader("Filtrer l'historique")
     noms_disponibles = df_result["Nom"].unique()
