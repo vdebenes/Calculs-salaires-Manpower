@@ -74,7 +74,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Jour": jour_semaine,
         "Heures totales": round(total_heures, 2),
         "Heures de nuit": heures_nuit,
-        "Heures sup (>9h30)": round(heures_sup, 2),
+        "Heures sup (>9h30)": round(total_heures - 9.5, 4) if total_heures > 9.5 else 0,
         "Majoration dimanche": round(maj_dimanche, 2),
         "Majoration samedi": round(maj_samedi, 2),
         "Majoration nuit": maj_nuit,
