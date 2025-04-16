@@ -1,4 +1,4 @@
-jour_en = pd.Timestamp(date).day_name().lower()
+    jour_en = pd.Timestamp(date).day_name().lower()
     jours_fr = {
         "monday": "Lundi",
         "tuesday": "Mardi",
@@ -9,10 +9,11 @@ jour_en = pd.Timestamp(date).day_name().lower()
         "sunday": "Dimanche"
     }
     jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
-    maj_dimanche = 4.80 * total_heures if jour_semaine == "Dimanche" else 0
-    maj_samedi = 2.40 * total_heures if jour_semaine == "Samedi" else 0
-    maj_nuit = round(heures_nuit * 8.4, 2)
-    maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
+    salaire_base = round(total_heures * tarif_horaire, 2)
+    maj_dimanche = round(4.80 * total_heures, 2) if jour_semaine == "Dimanche" else 0
+    maj_samedi = round(2.40 * total_heures, 2) if jour_semaine == "Samedi" else 0
+    maj_nuit = round(8.40 * heures_nuit, 2) if heures_nuit > 0 else 0
+    maj_sup = round(max(0, total_heures - 9.5) * tarif_horaire * 0.25, 2)
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
     majoration_ratio = round(total_brut / salaire_base, 3) if salaire_base > 0 else 1.0
     return {
