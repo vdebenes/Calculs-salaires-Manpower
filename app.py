@@ -175,7 +175,7 @@ if st.session_state.historique:
             h, m = map(int, new_pause_str.split(":"))
             new_pause = h + m / 60
         except:
-            new_pause = selected_data['Pause (h)']"], step=0.25)
+            new_pause = selected_data['Pause (h)']
         new_debut = st.time_input("Nouvelle heure de début", value=datetime.strptime(selected_data["Heure de début"], "%H:%M").time())
         new_fin = st.time_input("Nouvelle heure de fin", value=datetime.strptime(selected_data["Heure de fin"], "%H:%M").time())
 
