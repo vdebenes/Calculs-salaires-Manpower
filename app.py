@@ -47,7 +47,10 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heures_sup = max(0, total_heures - 9.5)
     minutes_sup = round(heures_sup * 60)
 
-    salaire_base = round(total_heures * tarif_horaire, 2)
+    heures_arrondies = int(total_heures)
+    minutes = int(round((total_heures - heures_arrondies) * 60))
+    total_heures_arrondies = heures_arrondies + minutes / 60
+    salaire_base = round(total_heures_arrondies * tarif_horaire, 2)
     jour_en = pd.Timestamp(date).day_name().lower()
     jours_fr = {
         "monday": "Lundi",
@@ -74,6 +77,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Date": date,
         "Jour": jour_semaine,
         "Heures totales": round(total_heures, 2),
+        "Heures totales arrondies": round(total_heures_arrondies, 2),
         "Heures de nuit": heures_nuit,
         "Heures sup (>9h30)": round(heures_sup, 4),
         "Minutes sup (>9h30)": minutes_sup,
