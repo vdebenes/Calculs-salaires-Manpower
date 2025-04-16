@@ -90,12 +90,12 @@ if st.session_state.historique:
     index_to_delete = st.number_input("Supprimer la ligne numéro :", min_value=1, max_value=len(df_result), step=1)
     if st.button("Supprimer"):
         del st.session_state.historique[index_to_delete - 1]
-        st.experimental_rerun()
+        st.rerun()
 
     # Vider tout l'historique
     if st.button("🗑️ Vider tout l'historique"):
         st.session_state.historique = []
-        st.experimental_rerun()
+        st.rerun()
 
     # Export Excel de l'historique filtré
     buffer = io.BytesIO()
