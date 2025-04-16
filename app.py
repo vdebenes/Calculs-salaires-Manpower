@@ -158,34 +158,39 @@ if st.session_state.historique:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-    # Export PDF de l'historique filtré (corrigé)
-pdf = FPDF()
-pdf.add_page()
-pdf.set_font("Arial", size=10)
-pdf.set_fill_color(220, 230, 241)
-pdf.set_text_color(0)
-pdf.set_draw_color(200, 200, 200)
+        # Export PDF de l'historique filtré (corrigé)
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+    pdf.set_fill_color(220, 230, 241)
+    pdf.set_text_color(0)
+    pdf.set_draw_color(200, 200, 200)
 
-# En-tête
-col_width = 190 / len(df_filtré.columns)
-pdf.set_font("Arial", style="B", size=10)
-for col in df_filtré.columns:
-    pdf.cell(col_width, 8, str(col), border=1, align='C', fill=True)
-pdf.ln()
-
-# Lignes
-pdf.set_font("Arial", size=9)
-fill = False
-for _, row in df_filtré.iterrows():
-    for value in row:
-        pdf.cell(col_width, 8, str(value), border=1, align='C', fill=fill)
+    # En-tête
+    col_width = 190 / len(df_filtré.columns)
+    pdf.set_font("Arial", style="B", size=10)
+    for col in df_filtré.columns:
+        pdf.cell(col_width, 8, str(col), border=1, align='C', fill=True)
     pdf.ln()
-    fill = not fill
 
-pdf_bytes = pdf.output(dest='S').encode('latin-1')
-pdf_buffer = io.BytesIO(pdf_bytes)
+    # Lignes
+    pdf.set_font("Arial", size=9)
+    fill = False
+    for _, row in df_filtré.iterrows():
+        for value in row:
+            pdf.cell(col_width, 8, str(value), border=1, align='C', fill=fill)
+        pdf.ln()
+        fill = not fill
+
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    pdf_buffer = io.BytesIO(pdf_bytes)
 
     st.download_button(
+        label="📄 Télécharger tout en PDF",
+        data=pdf_buffer,
+        file_name="salaires_historique.pdf",
+        mime="application/pdf"
+    )
         label="📄 Télécharger tout en PDF",
         data=pdf_buffer,
         file_name="salaires_historique.pdf",
