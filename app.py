@@ -103,10 +103,14 @@ if st.session_state.historique:
     nom_filtre = st.selectbox("Filtrer par nom", options=["Tous"] + list(noms_disponibles))
     date_filtre = st.selectbox("Filtrer par date", options=["Toutes"] + list(dates_disponibles))
 
-    df_result["Date"] = pd.to_datetime(df_result["Date"])
-df_result["Date"] = df_result["Date"].dt.strftime("%d.%m.%Y")
+        df_result["Date"] = pd.to_datetime(df_result["Date"])
+    df_result["Date"] = df_result["Date"].dt.strftime("%d.%m.%Y")
 
-df_filtré = df_result.copy()
+    df_filtré = df_result.copy()
+    if nom_filtre != "Tous":
+        df_filtré = df_filtré[df_filtré["Nom"] == nom_filtre]
+    if date_filtre != "Toutes":
+        df_filtré = df_filtré[df_filtré["Date"] == date_filtre]
     if nom_filtre != "Tous":
         df_filtré = df_filtré[df_filtré["Nom"] == nom_filtre]
     if date_filtre != "Toutes":
@@ -131,6 +135,27 @@ df_filtré = df_result.copy()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
         workbook = writer.book
+        worksheet = writer.sheets["Salaires"]
+        worksheet.freeze_panes(1, 0)
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'center',
+            'align': 'center',
+            'bg_color': '#dce6f1',
+            'border': 1
+        })
+
+        for col_num, value in enumerate(df_filtré.columns):
+            worksheet.write(0, col_num, value, header_format)
+            max_len = max(df_filtré[value].astype(str).map(len).max(), len(value)) + 2
+            worksheet.set_column(col_num, col_num, max_len)
+
+        for row_num, (_, row) in enumerate(df_filtré.iterrows(), start=1):
+            cell_format = workbook.add_format({'bg_color': '#f9f9f9'} if row_num % 2 == 0 else {})
+            for col_num, value in enumerate(row):
+                worksheet.write(row_num, col_num, value, cell_format)
         
     buffer.seek(0)
     st.download_button(
