@@ -72,8 +72,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "sunday": "Dimanche"
     }
     jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
-    maj_dimanche = 4.80 * total_heures_arrondies if jour_semaine == "Dimanche" else 0
-    maj_samedi = 2.40 * total_heures_arrondies if jour_semaine == "Samedi" else 0
+    maj_dimanche = 4.80 * total_heures if jour_semaine == "Dimanche" else 0
+    maj_samedi = 2.40 * total_heures if jour_semaine == "Samedi" else 0
     maj_nuit = round(heures_nuit * 8.4, 2)
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
