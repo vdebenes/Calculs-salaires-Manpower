@@ -124,7 +124,7 @@ if st.session_state.historique:
     # Export Excel de l'historique filtré
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_filtré.to_excel(writer, index=False, sheet_name="Salaires", startrow=1, header=False)
+        df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
         workbook = writer.book
         worksheet = writer.sheets["Salaires"]
         worksheet.freeze_panes(1, 0)  # Figer la première ligne
@@ -139,12 +139,20 @@ if st.session_state.historique:
             'border': 1
         })
 
-        for row_num, (index, row) in enumerate(df_filtré.iterrows(), start=1):
+        # Appliquer le style aux en-têtes
+        for col_num, value in enumerate(df_filtré.columns):
+            worksheet.write(0, col_num, value, header_format)
+            max_len = max(
+                df_filtré[value].astype(str).map(len).max(),
+                len(value)
+            ) + 2
+            worksheet.set_column(col_num, col_num, max_len)
+
+        # Appliquer style de ligne zébrée (gris sur lignes paires)
+        for row_num, (_, row) in enumerate(df_filtré.iterrows(), start=1):
             cell_format = workbook.add_format({'bg_color': '#f9f9f9'} if row_num % 2 == 0 else {})
-            for col_num, value in enumerate(df_filtré.columns):
-                worksheet.write(row_num, col_num, row[value], cell_format)
-                max_len = max(df_filtré[value].astype(str).map(len).max(), len(value)) + 2
-                worksheet.set_column(col_num, col_num, max_len)
+            for col_num, value in enumerate(row):
+                worksheet.write(row_num, col_num, value, cell_format)
         worksheet = writer.sheets["Salaires"]
         for i, col in enumerate(df_filtré.columns):
             max_len = max(
