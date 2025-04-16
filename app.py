@@ -3,6 +3,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heure_fin = datetime.strptime(heure_fin, "%H:%M")
     if heure_fin <= heure_debut:
         heure_fin += timedelta(days=1)
+
     heures_brutes = (heure_fin - heure_debut).total_seconds() / 3600
     total_heures = heures_brutes - pause
     heures_sup = max(0, total_heures - 9.5)
@@ -13,7 +14,12 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     current = heure_debut
     while current < heure_fin:
         if current.time() >= time(23, 0) or current.time() < time(6, 0):
-            next_point = min(heure_fin, datetime.combine(current.date(), time(6, 0)) if current.time() < time(6, 0) else current + timedelta(minutes=1))
+            next_point = min(
+                heure_fin,
+                datetime.combine(current.date(), time(6, 0))
+                if current.time() < time(6, 0)
+                else current + timedelta(minutes=1)
+            )
             heures_nuit += (min(next_point, heure_fin) - current).total_seconds() / 3600
         current += timedelta(minutes=1)
 
