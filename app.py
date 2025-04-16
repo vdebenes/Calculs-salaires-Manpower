@@ -1,9 +1,17 @@
-
 import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
+import io
+from fpdf import FPDF
 
 st.title("Calculateur de salaire avec majorations")
+
+# Initialiser une session pour stocker les résultats
+if "historique" not in st.session_state:
+    st.session_state.historique = []
+
+if "index_a_supprimer" not in st.session_state:
+    st.session_state.index_a_supprimer = None
 
 def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin):
     fmt = "%H:%M"
@@ -52,9 +60,72 @@ with st.form("salaire_form"):
     tarif = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
     heure_debut = st.time_input("Heure de début")
     heure_fin = st.time_input("Heure de fin")
-    submitted = st.form_submit_button("Calculer")
+    submitted = st.form_submit_button("Ajouter au tableau")
 
     if submitted:
         result = calcul_salaire(nom, date, tarif, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"))
-        st.subheader("Résultat")
-        st.dataframe(pd.DataFrame([result]))
+        st.session_state.historique.append(result)
+        st.success("Calcul ajouté au tableau !")
+
+if st.session_state.historique:
+    df_result = pd.DataFrame(st.session_state.historique)
+
+    st.subheader("Filtrer l'historique")
+    noms_disponibles = df_result["Nom"].unique()
+    dates_disponibles = df_result["Date"].unique()
+
+    nom_filtre = st.selectbox("Filtrer par nom", options=["Tous"] + list(noms_disponibles))
+    date_filtre = st.selectbox("Filtrer par date", options=["Toutes"] + list(dates_disponibles))
+
+    df_filtré = df_result.copy()
+    if nom_filtre != "Tous":
+        df_filtré = df_filtré[df_filtré["Nom"] == nom_filtre]
+    if date_filtre != "Toutes":
+        df_filtré = df_filtré[df_filtré["Date"] == date_filtre]
+
+    st.subheader("Historique des calculs")
+    st.dataframe(df_filtré, use_container_width=True)
+
+    # Supprimer une ligne
+    index_to_delete = st.number_input("Supprimer la ligne numéro :", min_value=1, max_value=len(df_result), step=1)
+    if st.button("Supprimer"):
+        del st.session_state.historique[index_to_delete - 1]
+        st.experimental_rerun()
+
+    # Vider tout l'historique
+    if st.button("🗑️ Vider tout l'historique"):
+        st.session_state.historique = []
+        st.experimental_rerun()
+
+    # Export Excel de l'historique filtré
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
+        writer.save()
+    st.download_button(
+        label="📥 Télécharger tout en Excel",
+        data=buffer,
+        file_name="salaires_historique.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # Export PDF de l'historique filtré
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+    pdf.cell(200, 10, txt="Historique des calculs de salaire", ln=True, align="C")
+    pdf.ln(5)
+    for _, row in df_filtré.iterrows():
+        for key, value in row.items():
+            pdf.cell(200, 8, txt=f"{key}: {value}", ln=True)
+        pdf.ln(4)
+    pdf_buffer = io.BytesIO()
+    pdf.output(pdf_buffer)
+    pdf_buffer.seek(0)
+
+    st.download_button(
+        label="📄 Télécharger tout en PDF",
+        data=pdf_buffer,
+        file_name="salaires_historique.pdf",
+        mime="application/pdf"
+    )
