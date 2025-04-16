@@ -125,6 +125,32 @@ with st.form("formulaire"):
         ), unsafe_allow_html=True)
 
 if data:
+    st.markdown("### ✏️ Modifier ou supprimer une ligne")
+    df_temp = pd.DataFrame(data)
+    options = df_temp.apply(lambda row: f"{row['Nom']} – {row['Date']}", axis=1)
+    selected = st.selectbox("Choisir une ligne à modifier ou supprimer", options)
+    selected_index = options.tolist().index(selected)
+    selected_data = data[selected_index]
+
+    with st.expander("Modifier les données"):
+        new_tarif = st.number_input("Tarif horaire (CHF)", value=selected_data["Tarif horaire"], step=0.05)
+        new_pause = st.number_input("Pause (h)", value=selected_data["Pause (h)"], step=0.05)
+        new_debut = st.time_input("Nouvelle heure de début", value=datetime.strptime(selected_data["Heure de début"], "%H:%M").time())
+        new_fin = st.time_input("Nouvelle heure de fin", value=datetime.strptime(selected_data["Heure de fin"], "%H:%M").time())
+        if st.button("💾 Enregistrer les modifications"):
+            updated = calcul_salaire(
+                selected_data["Nom"], selected_data["Date"], new_tarif,
+                new_debut.strftime("%H:%M"), new_fin.strftime("%H:%M"), new_pause
+            )
+            data[selected_index] = updated
+            st.session_state["data"] = data
+            st.success("✅ Ligne mise à jour avec succès.")
+
+    if st.button("🗑 Supprimer la ligne sélectionnée"):
+        del data[selected_index]
+        st.session_state["data"] = data
+        st.warning("🗑 Ligne supprimée.")
+
     df_result = pd.DataFrame(data)[[
         "Nom", "Tarif horaire", "Date",
         "Heures totales", "Heures totales arrondies",
