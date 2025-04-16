@@ -34,7 +34,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heures_sup = max(0, total_heures - 9.5)
 
     salaire_base = round(total_heures * tarif_horaire, 2)
-    jour_semaine = pd.Timestamp(date).day_name().lower()
+    import locale
+    locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+    jour_semaine = pd.Timestamp(date).strftime("%A").capitalize()
     maj_dimanche = 4.80 * total_heures if jour_semaine == "sunday" else 0
     maj_samedi = 2.40 * total_heures if jour_semaine == "saturday" else 0
     maj_nuit = round(heures_nuit * 8.4, 2)
@@ -101,7 +103,10 @@ if st.session_state.historique:
     nom_filtre = st.selectbox("Filtrer par nom", options=["Tous"] + list(noms_disponibles))
     date_filtre = st.selectbox("Filtrer par date", options=["Toutes"] + list(dates_disponibles))
 
-    df_filtré = df_result.copy()
+    df_result["Date"] = pd.to_datetime(df_result["Date"])
+df_result["Date"] = df_result["Date"].dt.strftime("%d.%m.%Y")
+
+df_filtré = df_result.copy()
     if nom_filtre != "Tous":
         df_filtré = df_filtré[df_filtré["Nom"] == nom_filtre]
     if date_filtre != "Toutes":
@@ -126,40 +131,7 @@ if st.session_state.historique:
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
         workbook = writer.book
-        worksheet = writer.sheets["Salaires"]
-        worksheet.freeze_panes(1, 0)  # Figer la première ligne
-
-        # Définir le style avant de l'utiliser
-        header_format = workbook.add_format({
-            'bold': True,
-            'text_wrap': True,
-            'valign': 'center',
-            'align': 'center',
-            'bg_color': '#dce6f1',
-            'border': 1
-        })
-
-        # Appliquer le style aux en-têtes
-        for col_num, value in enumerate(df_filtré.columns):
-            worksheet.write(0, col_num, value, header_format)
-            max_len = max(
-                df_filtré[value].astype(str).map(len).max(),
-                len(value)
-            ) + 2
-            worksheet.set_column(col_num, col_num, max_len)
-
-        # Appliquer style de ligne zébrée (gris sur lignes paires)
-        for row_num, (_, row) in enumerate(df_filtré.iterrows(), start=1):
-            cell_format = workbook.add_format({'bg_color': '#f9f9f9'} if row_num % 2 == 0 else {})
-            for col_num, value in enumerate(row):
-                worksheet.write(row_num, col_num, value, cell_format)
-        worksheet = writer.sheets["Salaires"]
-        for i, col in enumerate(df_filtré.columns):
-            max_len = max(
-                df_filtré[col].astype(str).map(len).max(),
-                len(col)
-            ) + 2
-            worksheet.set_column(i, i, max_len)
+        
     buffer.seek(0)
     st.download_button(
         label="📥 Télécharger tout en Excel",
