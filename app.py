@@ -120,6 +120,15 @@ if data:
         file_name='salaires_manpower.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+    # --- Téléchargement PDF ---
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=10)
+    col_width = pdf.w / 5.5
+    row_height = pdf.font_size * 1.5
+
     for i, column in enumerate(df_result.columns):
         pdf.cell(col_width, row_height, txt=column, border=1)
     pdf.ln(row_height)
@@ -136,11 +145,6 @@ if data:
         data=pdf_buffer.getvalue(),
         file_name="salaires_manpower.pdf",
         mime="application/pdf"
-    )
-
-    ,
-        file_name='salaires_manpower.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 else:
     st.info("Aucune donnée enregistrée.")
