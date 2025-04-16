@@ -125,6 +125,31 @@ if st.session_state.historique:
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
+        workbook = writer.book
+        worksheet = writer.sheets["Salaires"]
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'center',
+            'align': 'center',
+            'bg_color': '#dce6f1',
+            'border': 1
+        })
+
+        for row_num, (index, row) in enumerate(df_filtré.iterrows(), start=1):
+            cell_format = workbook.add_format({'bg_color': '#f9f9f9'} if row_num % 2 == 0 else {})
+            for col_num, value in enumerate(df_filtré.columns):
+                worksheet.write(row_num, col_num, row[value], cell_format)
+                max_len = max(df_filtré[value].astype(str).map(len).max(), len(value)) + 2
+                worksheet.set_column(col_num, col_num, max_len)
+        worksheet = writer.sheets["Salaires"]
+        for i, col in enumerate(df_filtré.columns):
+            max_len = max(
+                df_filtré[col].astype(str).map(len).max(),
+                len(col)
+            ) + 2
+            worksheet.set_column(i, i, max_len)
     buffer.seek(0)
     st.download_button(
         label="📥 Télécharger tout en Excel",
@@ -134,17 +159,31 @@ if st.session_state.historique:
     )
 
     # Export PDF de l'historique filtré (corrigé)
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=10)
-    pdf.cell(200, 10, txt="Historique des calculs de salaire", ln=True, align="C")
-    pdf.ln(5)
-    for _, row in df_filtré.iterrows():
-        for key, value in row.items():
-            pdf.cell(200, 8, txt=f"{key}: {value}", ln=True)
-        pdf.ln(4)
-    pdf_bytes = pdf.output(dest='S').encode('latin-1')
-    pdf_buffer = io.BytesIO(pdf_bytes)
+pdf = FPDF()
+pdf.add_page()
+pdf.set_font("Arial", size=10)
+pdf.set_fill_color(220, 230, 241)
+pdf.set_text_color(0)
+pdf.set_draw_color(200, 200, 200)
+
+# En-tête
+col_width = 190 / len(df_filtré.columns)
+pdf.set_font("Arial", style="B", size=10)
+for col in df_filtré.columns:
+    pdf.cell(col_width, 8, str(col), border=1, align='C', fill=True)
+pdf.ln()
+
+# Lignes
+pdf.set_font("Arial", size=9)
+fill = False
+for _, row in df_filtré.iterrows():
+    for value in row:
+        pdf.cell(col_width, 8, str(value), border=1, align='C', fill=fill)
+    pdf.ln()
+    fill = not fill
+
+pdf_bytes = pdf.output(dest='S').encode('latin-1')
+pdf_buffer = io.BytesIO(pdf_bytes)
 
     st.download_button(
         label="📄 Télécharger tout en PDF",
