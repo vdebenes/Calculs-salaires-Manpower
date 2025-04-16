@@ -151,9 +151,6 @@ if data:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    ,
-        file_name="salaires_manpower.pdf",
-        mime="application/pdf"
-    )
+    
 else:
     st.info("Aucune donnée enregistrée.")
