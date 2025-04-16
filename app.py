@@ -44,6 +44,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
             heures_nuit += 1
         heure += timedelta(hours=1)
 
+    # Heures supplémentaires = tout ce qui dépasse 9h30
     heures_sup = max(0, total_heures - 9.5)
     minutes_sup = round(heures_sup * 60)
 
@@ -59,7 +60,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     minutes_sup = round(heures_sup * 60)
     heures_normales = min(total_heures, 9.5)
     heures_sup = max(0, total_heures - 9.5)
-    salaire_base = round(heures_normales * tarif_horaire, 2)
+    # Salaire de base limité à 9h30
+    salaire_base = round(min(total_heures, 9.5) * tarif_horaire, 2)
+    # Majoration des heures supplémentaires (au-delà de 9h30)
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     jour_en = pd.Timestamp(date).day_name().lower()
     jours_fr = {
