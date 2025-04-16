@@ -132,6 +132,31 @@ if st.session_state.historique:
     st.subheader("Historique des calculs")
     st.dataframe(df_filtré, use_container_width=True)
 
+    # Modifier une ligne
+    st.subheader("Modifier une ligne existante")
+    if len(st.session_state.historique) > 0:
+        index_to_edit = st.number_input("Numéro de ligne à modifier :", min_value=1, max_value=len(st.session_state.historique), step=1)
+        selected_data = st.session_state.historique[index_to_edit - 1]
+
+        new_tarif = st.number_input("Nouveau tarif horaire", value=selected_data["Tarif horaire"], step=0.05)
+        new_date = st.date_input("Nouvelle date", value=new_date)
+        new_pause = st.number_input("Nouvelle pause (h)", value=selected_data["Pause (h)"], step=0.25)"], step=0.25)
+        new_debut = st.time_input("Nouvelle heure de début", value=datetime.strptime(selected_data["Heure de début"], "%H:%M").time())
+        new_fin = st.time_input("Nouvelle heure de fin", value=datetime.strptime(selected_data["Heure de fin"], "%H:%M").time())
+
+        if st.button("Mettre à jour la ligne"):
+            recalcul = calcul_salaire(
+                selected_data["Nom"],
+                pd.to_datetime(selected_data["Date"]),
+                new_tarif,
+                new_debut.strftime("%H:%M"),
+                new_fin.strftime("%H:%M"),
+                new_pause
+            )
+            st.session_state.historique[index_to_edit - 1] = recalcul
+            st.success("Ligne mise à jour avec succès !")
+            st.rerun()
+
     # Supprimer une ligne
     index_to_delete = st.number_input("Supprimer la ligne numéro :", min_value=1, max_value=len(df_result), step=1)
     if st.button("Supprimer"):
