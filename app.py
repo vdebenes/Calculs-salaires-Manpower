@@ -124,9 +124,14 @@ if st.session_state.historique:
     # Export Excel de l'historique filtré
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_filtré.to_excel(writer, index=False, sheet_name="Salaires")
+        df_filtré.to_excel(writer, index=False, sheet_name="Salaires", startrow=1, header=False)
         workbook = writer.book
         worksheet = writer.sheets["Salaires"]
+        worksheet.freeze_panes(1, 0)  # Figer la première ligne
+
+        # Appliquer le style aux en-têtes
+        for col_num, value in enumerate(df_filtré.columns):
+            worksheet.write(0, col_num, value, header_format)
 
         header_format = workbook.add_format({
             'bold': True,
