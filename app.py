@@ -129,10 +129,7 @@ if st.session_state.historique:
         worksheet = writer.sheets["Salaires"]
         worksheet.freeze_panes(1, 0)  # Figer la première ligne
 
-        # Appliquer le style aux en-têtes
-        for col_num, value in enumerate(df_filtré.columns):
-            worksheet.write(0, col_num, value, header_format)
-
+        # Définir le style avant de l'utiliser
         header_format = workbook.add_format({
             'bold': True,
             'text_wrap': True,
