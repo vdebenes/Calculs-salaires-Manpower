@@ -69,7 +69,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Salaire de base": salaire_base,
         "Salaire total brut": total_brut,
         "Tarif horaire": tarif_horaire,
-        "Majoration 25%": round(tarif_horaire * (majoration_ratio - 1), 2)
+        "Majoration 25%": round(tarif_horaire * 0.25, 2)
     }
 
 with st.form("salaire_form"):
