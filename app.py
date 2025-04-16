@@ -34,9 +34,19 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heures_sup = max(0, total_heures - 9.5)
 
     salaire_base = round(total_heures * tarif_horaire, 2)
-    jour_semaine = pd.Timestamp(date).day_name(locale='fr_FR').capitalize()
-    maj_dimanche = 4.80 * total_heures if jour_semaine == "sunday" else 0
-    maj_samedi = 2.40 * total_heures if jour_semaine == "saturday" else 0
+    jour_en = pd.Timestamp(date).day_name().lower()
+    jours_fr = {
+        "monday": "Lundi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi",
+        "thursday": "Jeudi",
+        "friday": "Vendredi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche"
+    }
+    jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
+    maj_dimanche = 4.80 * total_heures if jour_en == "sunday" else 0
+    maj_samedi = 2.40 * total_heures if jour_en == "saturday" else 0
     maj_nuit = round(heures_nuit * 8.4, 2)
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     total_brut = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_sup, 2)
@@ -72,9 +82,9 @@ with st.form("salaire_form"):
         st.session_state.historique.append(result)
         st.success("Calcul ajouté au tableau !")
         # Affichage coloré selon le jour
-        if result['Jour'] == "sunday":
+        if result['Jour'].lower() == "dimanche":
             color = "#ffdddd"
-        elif result['Jour'] == "saturday":
+        elif result['Jour'].lower() == "samedi":
             color = "#fff5cc"
         elif result['Heures de nuit'] > 0:
             color = "#ddeeff"
