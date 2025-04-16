@@ -116,10 +116,7 @@ if data:
 
     st.download_button(
         label="📥 Télécharger le tableau en Excel",
-        data=output.getvalue(),
-        file_name='salaires_manpower.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
+        data=output.getvalue()
 
     # --- Téléchargement PDF ---
     from fpdf import FPDF
@@ -153,8 +150,3 @@ if data:
     )
 else:
     st.info("Aucune donnée enregistrée.")
-
-,
-        file_name='salaires_manpower.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )""
