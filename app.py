@@ -139,7 +139,8 @@ if data:
         pdf.ln(row_height)
 
     pdf_buffer = io.BytesIO()
-    pdf.output(name=pdf_buffer)
+    pdf_bytes = pdf.output(dest='S').encode('latin1')
+    pdf_buffer.write(pdf_bytes)
     pdf_buffer.seek(0)
     st.download_button(
         label="📄 Télécharger tout en PDF",
