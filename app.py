@@ -1,25 +1,29 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta, time
+
+st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
+
+@st.cache_data
+
+def init_data():
+    return []
+
 def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heure_debut = datetime.strptime(heure_debut, "%H:%M")
     heure_fin = datetime.strptime(heure_fin, "%H:%M")
     if heure_fin <= heure_debut:
         heure_fin += timedelta(days=1)
-
     heures_brutes = (heure_fin - heure_debut).total_seconds() / 3600
     total_heures = heures_brutes - pause
     heures_sup = max(0, total_heures - 9.5)
     minutes_sup = round(heures_sup * 60)
 
-    # Calcul des heures de nuit (entre 23h et 6h)
     heures_nuit = 0.0
     current = heure_debut
     while current < heure_fin:
         if current.time() >= time(23, 0) or current.time() < time(6, 0):
-            next_point = min(
-                heure_fin,
-                datetime.combine(current.date(), time(6, 0))
-                if current.time() < time(6, 0)
-                else current + timedelta(minutes=1)
-            )
+            next_point = min(heure_fin, datetime.combine(current.date(), time(6, 0)) if current.time() < time(6, 0) else current + timedelta(minutes=1))
             heures_nuit += (min(next_point, heure_fin) - current).total_seconds() / 3600
         current += timedelta(minutes=1)
 
@@ -51,12 +55,12 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         total_heures_arrondies = heures_arrondies
 
     return {
+        "Nom": nom,
+        "Date": date,
         "Heure de début": heure_debut.strftime("%H:%M"),
         "Heure de fin": heure_fin.strftime("%H:%M"),
         "Heures brutes": round(heures_brutes, 2),
         "Pause (h)": pause,
-        "Nom": nom,
-        "Date": date,
         "Jour": jour_semaine,
         "Heures totales": round(total_heures, 2),
         "Heures totales arrondies": round(total_heures_arrondies, 2),
@@ -72,3 +76,30 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Tarif horaire": tarif_horaire,
         "Majoration 25%": round(tarif_horaire * 0.25, 2)
     }
+
+st.title("🧾 Calculateur de salaire Manpower")
+data = st.session_state.get("data", init_data())
+
+with st.form("formulaire"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        nom = st.text_input("Nom")
+        date = st.date_input("Date")
+    with col2:
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.01)
+        pause = st.number_input("Pause (h)", min_value=0.0, step=0.05)
+    with col3:
+        heure_debut = st.time_input("Heure de début")
+        heure_fin = st.time_input("Heure de fin")
+
+    submitted = st.form_submit_button("Ajouter")
+    if submitted:
+        result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause)
+        data.append(result)
+        st.session_state["data"] = data
+
+if data:
+    df_result = pd.DataFrame(data)
+    st.dataframe(df_result, use_container_width=True)
+else:
+    st.info("Aucune donnée enregistrée.")
