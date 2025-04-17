@@ -98,7 +98,11 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "h sup brut": heures_sup_minutes,
         "h nuit brut": round(heures_nuit, 2),
         "h samedi brut": round(heures_samedi, 2),
-        "h dimanche brut": round(heures_dimanche, 2)
+        "h dimanche brut": round(heures_dimanche, 2),
+        "Maj sup brut": maj_sup,
+        "Maj dim brut": maj_dimanche,
+        "Maj sam brut": maj_samedi,
+        "Maj nuit brut": maj_nuit
     }
 
 st.title("🗞 Calculateur de salaire Manpower")
@@ -126,16 +130,17 @@ with st.form("formulaire"):
         st.markdown(f"""
             <div style='background-color:#ffe6e6;padding:10px;border-radius:5px;'>
             <strong>Résumé :</strong><br>
+            - Tarif horaire : <strong>CHF {result['Tarif horaire']:.2f}</strong><br>
             - Heures brutes : <strong>{result['Heures brutes']:.2f} h</strong><br>
             - Pause : <strong>{result['Pause (h)']:.2f} h</strong><br>
-            - Heures totales : <strong>{format_minutes(result['Heures totales'])}</strong><br>
+            - Heures totales : <strong>{format_minutes(result['Heures totales'])} (soit {result['Heures totales']:.2f} h)</strong><br>
+            - Salaire de base (avant majorations) : <strong>CHF {result['Salaire de base']:.2f}</strong><br>
             - Salaire brut : <strong>CHF {result['Salaire total brut']:.2f}</strong><br>
             - Majoration 25% (heure sup) : <strong>CHF {result['Majoration 25%']:.2f} / h</strong><br>
-            - Heures sup : <strong>{format_minutes(result['h sup brut']/60)}</strong><br>
-            - Heures samedi : <strong>{format_minutes(result['h samedi brut'])}</strong><br>
-            - Heures dimanche : <strong>{format_minutes(result['h dimanche brut'])}</strong><br>
-            - Heures de nuit : <strong>{format_minutes(result['h nuit brut'])}</strong><br>
-            - Majoration nuit : <strong>CHF {result['Majoration nuit']:.2f}</strong>
+            - Heures sup : <strong>{format_minutes(result['h sup brut']/60)}</strong> - Majoration : <strong>CHF {result['Maj sup brut']:.2f}</strong><br>
+            - Heures samedi : <strong>{format_minutes(result['h samedi brut'])}</strong> - Majoration : <strong>CHF {result['Maj sam brut']:.2f}</strong><br>
+            - Heures dimanche : <strong>{format_minutes(result['h dimanche brut'])}</strong> - Majoration : <strong>CHF {result['Maj dim brut']:.2f}</strong><br>
+            - Heures de nuit : <strong>{format_minutes(result['h nuit brut'])}</strong> - Majoration : <strong>CHF {result['Maj nuit brut']:.2f}</strong>
             </div>
         """, unsafe_allow_html=True)
 
@@ -149,7 +154,7 @@ if data:
         "Heures dimanche", "Majoration dimanche",
         "Heures de nuit", "Majoration nuit",
         "Salaire de base", "Salaire total brut"
-    ]]
+    ]
     st.dataframe(df_result, use_container_width=True)
 
     output = io.BytesIO()
