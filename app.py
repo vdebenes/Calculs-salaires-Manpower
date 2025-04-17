@@ -1,4 +1,31 @@
-...
+import streamlit as st
+import pandas as pd
+from datetime import datetime, timedelta, time, date as date_class
+import io
+
+st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
+
+st.markdown("""
+    <style>
+    .stTextInput, .stNumberInput, .stDateInput, .stTimeInput {
+        max-width: 300px;
+    }
+    .recap-box {
+        background-color: #ffe6f0;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 10px 0;
+        font-size: 16px;
+    }
+    .form-box {
+        padding: 10px;
+    }
+    .small-table .stDataFrame {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # Interface utilisateur
 col1, col2 = st.columns([2, 3])
