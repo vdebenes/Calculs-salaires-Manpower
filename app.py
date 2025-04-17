@@ -20,6 +20,10 @@ st.markdown("""
     .form-box {
         padding: 10px;
     }
+    .small-table .stDataFrame {
+        max-height: 300px;
+        overflow-y: auto;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -102,11 +106,10 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         minute_count += 1
 
     maj_25_taux = round(tarif_horaire * 0.25, 2)
-
     maj_sup = maj_nuit = maj_dimanche = maj_samedi = 0.0
 
     if heures_dimanche > 0 or heures_nuit > 0 or heures_samedi > 0:
-        maj_sup = 0.0  # pas de cumul
+        maj_sup = 0.0
     else:
         maj_sup = round(heures_sup * maj_25_taux, 2)
 
@@ -177,3 +180,13 @@ if st.button("Calculer salaire"):
     st.session_state.missions.append(resultat)
     st.session_state.tarifs_par_nom[nom] = tarif_horaire
     st.experimental_rerun()
+
+# Tableau des missions
+if st.session_state.missions:
+    st.subheader("Historique des missions")
+    df = pd.DataFrame(st.session_state.missions)
+    st.dataframe(df, use_container_width=True, height=350)
+    index_to_delete = st.number_input("Supprimer la ligne n° (index commençant à 0)", min_value=0, max_value=len(df)-1, step=1)
+    if st.button("Supprimer cette ligne"):
+        st.session_state.missions.pop(index_to_delete)
+        st.experimental_rerun()
