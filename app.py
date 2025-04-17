@@ -29,6 +29,17 @@ def generate_excel(df):
     output.seek(0)
     return output
 
+# Fonction de conversion d'une pause (hh:mm ou h.mm) en décimal
+def convert_pause_to_decimal(pause_str):
+    try:
+        if ":" in pause_str:
+            h, m = map(int, pause_str.split(":"))
+            return h + m / 60
+        else:
+            return float(pause_str)
+    except Exception:
+        return 0.0
+
 st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
 # Initialisation des états
