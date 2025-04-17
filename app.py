@@ -155,7 +155,10 @@ with col1:
     heure_fin = st.time_input("Heure de fin", value=time(17, 0))
     pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
     if st.button("Vider le formulaire"):
-        st.experimental_rerun()
+        st.session_state.nom = ""
+        st.session_state.tarif_horaire = 0.0
+        st.session_state.numero_mission = ""
+        st.stop()
 
 with col2:
     st.subheader("Résumé de la dernière mission")
