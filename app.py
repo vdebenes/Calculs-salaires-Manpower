@@ -28,7 +28,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     total_heures = heures_brutes - pause
 
     heures_sup = max(0, total_heures - 9.5)
-    heures_sup_minutes = int(heures_sup * 60)
+    heures_sup_minutes = round(heures_sup * 60)
     heures_sup_format = f"{heures_sup_minutes // 60}:{heures_sup_minutes % 60:02d}"
 
     heures_nuit = 0.0
@@ -143,7 +143,7 @@ if data:
         "Heures dimanche", "Majoration dimanche",
         "Heures de nuit", "Majoration nuit",
         "Salaire de base", "Salaire total brut"
-    ]
+    ]]
     st.dataframe(df_result, use_container_width=True)
 
     output = io.BytesIO()
