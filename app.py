@@ -78,7 +78,17 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Tarif horaire": tarif_horaire,
         "Pause (h)": round(pause, 2),
         "Heures totales": round(total_heures, 2),
+        "Heures totales (hh:mm)": format_minutes(total_heures),
         "Salaire de base": salaire_base,
+        "Majoration 25% (heure sup)": maj_25_taux,
+        "Heures sup (hh:mm)": heures_sup_format,
+        "Heures samedi (hh:mm)": format_minutes(heures_samedi),
+        "Heures dimanche (hh:mm)": format_minutes(heures_dimanche),
+        "Heures de nuit (hh:mm)": format_minutes(heures_nuit),
+        "Majoration heures sup": maj_sup,
+        "Majoration samedi": maj_samedi,
+        "Majoration dimanche": maj_dimanche,
+        "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
 
@@ -113,9 +123,19 @@ with st.form("formulaire"):
             - Heure de début : <strong>{result['Heure de début']}</strong> — Heure de fin : <strong>{result['Heure de fin']}</strong><br>
             - Nom : <strong>{result['Nom']}</strong><br>
             - Tarif horaire : <strong>CHF {result['Tarif horaire']:.2f}</strong><br>
-            - Heures totales : <strong>{format_minutes(result['Heures totales'])} (soit {result['Heures totales']:.2f} h)</strong><br>
+            - Heures brutes : <strong>{result['Heures totales'] + result['Pause (h)']:.2f} h</strong><br>
             - Pause : <strong>{result['Pause (h)']:.2f} h</strong><br>
+            - Heures totales : <strong>{result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)</strong><br>
             - Salaire de base : <strong>CHF {result['Salaire de base']:.2f}</strong><br>
+            - Majoration 25% (heure sup) : <strong>CHF {result['Majoration 25% (heure sup)']:.2f} / h</strong><br>
+            - Heures sup : <strong>{result['Heures sup (hh:mm)']}</strong><br>
+            - Heures samedi : <strong>{result['Heures samedi (hh:mm)']}</strong><br>
+            - Heures dimanche : <strong>{result['Heures dimanche (hh:mm)']}</strong><br>
+            - Heures de nuit : <strong>{result['Heures de nuit (hh:mm)']}</strong><br>
+            - Majoration heures sup : <strong>CHF {result['Majoration heures sup']:.2f}</strong><br>
+            - Majoration samedi : <strong>CHF {result['Majoration samedi']:.2f}</strong><br>
+            - Majoration dimanche : <strong>CHF {result['Majoration dimanche']:.2f}</strong><br>
+            - Majoration nuit : <strong>CHF {result['Majoration nuit']:.2f}</strong><br>
             - Salaire brut : <strong>CHF {result['Salaire total brut']:.2f}</strong>
             </div>
         """, unsafe_allow_html=True)
@@ -123,7 +143,10 @@ with st.form("formulaire"):
 if data:
     df_result = pd.DataFrame(data)[[
         "Mission", "Nom", "Date", "Heure de début", "Heure de fin", "Tarif horaire",
-        "Pause (h)", "Heures totales", "Salaire de base", "Salaire total brut"
+        "Pause (h)", "Heures totales", "Heures totales (hh:mm)", "Salaire de base",
+        "Majoration 25% (heure sup)", "Heures sup (hh:mm)", "Heures samedi (hh:mm)",
+        "Heures dimanche (hh:mm)", "Heures de nuit (hh:mm)", "Majoration heures sup",
+        "Majoration samedi", "Majoration dimanche", "Majoration nuit", "Salaire total brut"
     ]]
     st.dataframe(df_result, use_container_width=True)
 
