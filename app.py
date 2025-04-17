@@ -8,7 +8,7 @@ st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 st.markdown("""
     <style>
     .stTextInput, .stNumberInput, .stDateInput, .stTimeInput {
-        max-width: 350px;
+        max-width: 300px;
     }
     .recap-box {
         background-color: #ffe6f0;
@@ -16,6 +16,9 @@ st.markdown("""
         padding: 10px 20px;
         margin: 10px 0;
         font-size: 16px;
+    }
+    .form-box {
+        padding: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -58,13 +61,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
     jour_en = pd.Timestamp(date).day_name().lower()
     jours_fr = {
-        "monday": "Lundi",
-        "tuesday": "Mardi",
-        "wednesday": "Mercredi",
-        "thursday": "Jeudi",
-        "friday": "Vendredi",
-        "saturday": "Samedi",
-        "sunday": "Dimanche"
+        "monday": "Lundi", "tuesday": "Mardi", "wednesday": "Mercredi",
+        "thursday": "Jeudi", "friday": "Vendredi", "saturday": "Samedi", "sunday": "Dimanche"
     }
     jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
 
@@ -159,18 +157,18 @@ with col_form:
             reset = st.form_submit_button("Vider le formulaire")
 
 if reset:
-    st.session_state.nom = ""
-    st.session_state.mission = ""
-    st.session_state.date = datetime.today().date()
-    st.session_state.tarif = 0.0
-    st.session_state.debut = time(8, 0)
-    st.session_state.fin = time(17, 0)
-    st.session_state.pause = "0:00"
+    for key in ["nom", "mission", "date", "tarif", "debut", "fin", "pause"]:
+        if key in st.session_state:
+            del st.session_state[key]
     st.experimental_rerun()
 
 if submit:
     pause = convert_pause_to_decimal(st.session_state.pause)
-    result = calcul_salaire(st.session_state.nom, st.session_state.date, st.session_state.tarif, st.session_state.debut.strftime("%H:%M"), st.session_state.fin.strftime("%H:%M"), pause, st.session_state.mission)
+    result = calcul_salaire(
+        st.session_state.nom, st.session_state.date, st.session_state.tarif,
+        st.session_state.debut.strftime("%H:%M"), st.session_state.fin.strftime("%H:%M"),
+        pause, st.session_state.mission
+    )
     st.session_state.missions.append(result)
     st.session_state.tarifs_par_nom[st.session_state.nom] = st.session_state.tarif
 
@@ -178,16 +176,24 @@ if st.session_state.missions:
     df_all = pd.DataFrame(st.session_state.missions)
 
     with col_recap:
-        st.markdown("<div class='recap-box'><b>Résumé de la dernière mission :</b><br>" +
-            "<br>".join([f"{key} : {value}" for key, value in st.session_state.missions[-1].items()]) +
-            "</div>", unsafe_allow_html=True)
+        dernier = st.session_state.missions[-1]
+        recap_html = f"""
+        <div class='recap-box'>
+        <b>Résumé :</b><br>
+        Mission : {dernier['Mission']} — Date : {dernier['Date']} — Heure de début : {dernier['Heure de début']} — Heure de fin : {dernier['Heure de fin']}<br>
+        Nom : {dernier['Nom']} — Tarif horaire : {dernier['Tarif horaire']} CHF — Pause : {dernier['Pause (h)']} h<br>
+        Heures totales : {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']} h)<br>
+        Salaire de base : {dernier['Salaire de base']} CHF<br>
+        Majoration 25% (heure sup) : {dernier['Majoration 25% (heure sup)']} CHF — Heures sup : {dernier['Heures sup (hh:mm)']}<br>
+        Heures samedi : {dernier['Heures samedi (hh:mm)']} — Majoration samedi : {dernier['Majoration samedi']} CHF<br>
+        Heures dimanche : {dernier['Heures dimanche (hh:mm)']} — Majoration dimanche : {dernier['Majoration dimanche']} CHF<br>
+        Heures de nuit : {dernier['Heures de nuit (hh:mm)']} — Majoration nuit : {dernier['Majoration nuit']} CHF<br>
+        <b>Salaire total brut : {dernier['Salaire total brut']} CHF</b>
+        </div>
+        """
+        st.markdown(recap_html, unsafe_allow_html=True)
 
-    st.dataframe(
-        df_all,
-        use_container_width=False,
-        height=300,
-        width=800
-    )
+    st.dataframe(df_all, use_container_width=False, height=300, width=800)
 
     for i in range(len(st.session_state.missions)):
         col1, col2 = st.columns([10, 1])
