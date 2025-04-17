@@ -110,3 +110,39 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+
+# Interface utilisateur
+with st.form("salaire_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        nom = st.text_input("Nom du collaborateur")
+        numero_mission = st.text_input("Numéro de mission")
+        date = st.date_input("Date de la mission")
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+    with col2:
+        heure_debut = st.time_input("Heure de début", time(8, 0))
+        heure_fin = st.time_input("Heure de fin", time(17, 0))
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    submit = st.form_submit_button("Calculer")
+
+if submit:
+    pause = convert_pause_to_decimal(pause_str)
+    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+
+    st.markdown(
+        f"""
+        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
+        <b>Résumé :</b><br>
+        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
+        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
+        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
+        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
+        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
+        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
+        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
+        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
+        <b>Total brut : {result['Salaire total brut']:.2f} CHF</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
