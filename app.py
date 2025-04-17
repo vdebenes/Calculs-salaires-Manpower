@@ -121,3 +121,48 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+
+# Interface utilisateur
+st.title("Calculateur de salaire Manpower")
+
+with st.form("salaire_form"):
+    nom = st.text_input("Nom du collaborateur")
+    numero_mission = st.text_input("Numéro de mission")
+    date = st.date_input("Date de la mission")
+    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+    heure_debut = st.time_input("Heure de début", time(8, 0))
+    heure_fin = st.time_input("Heure de fin", time(17, 0))
+    pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    submit = st.form_submit_button("Calculer")
+
+if submit:
+    pause = convert_pause_to_decimal(pause_str)
+    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+
+    st.success("Calcul effectué !")
+    
+    with st.expander("Résumé des calculs", expanded=True):
+        for k, v in result.items():
+            if isinstance(v, float):
+                if "CHF" not in k and not k.startswith("Heures"):
+                    st.write(f"**{k}** : {v:.2f} CHF")
+                else:
+                    st.write(f"**{k}** : {v}")
+            else:
+                st.write(f"**{k}** : {v}")
+
+    df_result = pd.DataFrame([result])
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name="Salaire")
+        worksheet = writer.sheets["Salaire"]
+        for idx, col in enumerate(df_result.columns):
+            worksheet.set_column(idx, idx, max(15, len(col) + 2))
+    
+    st.download_button(
+        label="📥 Télécharger le résultat en Excel",
+        data=buffer.getvalue(),
+        file_name="salaire_calculé.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
