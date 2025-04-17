@@ -37,13 +37,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
     jour_en = pd.Timestamp(date).day_name().lower()
     jours_fr = {
-        "monday": "Lundi",
-        "tuesday": "Mardi",
-        "wednesday": "Mercredi",
-        "thursday": "Jeudi",
-        "friday": "Vendredi",
-        "saturday": "Samedi",
-        "sunday": "Dimanche"
+        "monday": "Lundi", "tuesday": "Mardi", "wednesday": "Mercredi",
+        "thursday": "Jeudi", "friday": "Vendredi", "saturday": "Samedi", "sunday": "Dimanche"
     }
     jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
 
@@ -54,7 +49,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     }
     is_jour_ferie = date in jours_feries
 
-    heures_nuit = heures_dimanche = heures_samedi = heures_normales = heures_sup = 0.0
+    heures_nuit = heures_dimanche = heures_samedi = heures_sup = heures_normales = 0.0
     current = heure_debut
     pause_minutes = int(pause * 60)
     total_minutes = int((heure_fin - heure_debut).total_seconds() / 60)
@@ -68,25 +63,31 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         is_samedi = jour_semaine == "Samedi"
         minute_in_hour = minute_count / 60
 
-        if is_nuit:
-            heures_nuit += 1 / 60
-        elif is_dimanche:
-            heures_dimanche += 1 / 60
-        elif is_samedi:
-            heures_samedi += 1 / 60
-        elif minute_in_hour >= 9.5:
-            heures_sup += 1 / 60
-        else:
+        taux_majorations = {
+            "nuit": 8.40 if is_nuit else 0,
+            "dimanche": 4.80 if is_dimanche else 0,
+            "samedi": 2.40 if is_samedi else 0,
+            "sup": tarif_horaire * 0.25 if minute_in_hour >= 9.5 else 0
+        }
+
+        max_cat = max(taux_majorations, key=taux_majorations.get)
+
+        if taux_majorations[max_cat] == 0:
             heures_normales += 1 / 60
+        elif max_cat == "nuit":
+            heures_nuit += 1 / 60
+        elif max_cat == "dimanche":
+            heures_dimanche += 1 / 60
+        elif max_cat == "samedi":
+            heures_samedi += 1 / 60
+        elif max_cat == "sup":
+            heures_sup += 1 / 60
 
         current += timedelta(minutes=1)
         minute_count += 1
 
-    heures_sup = max(0, total_heures - (heures_nuit + heures_dimanche + heures_samedi))
-
     salaire_base = round(total_heures * tarif_horaire, 2)
-    maj_25_taux = round(tarif_horaire * 0.25, 2)
-    maj_sup = round(heures_sup * maj_25_taux, 2)
+    maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
     maj_nuit = round(8.40 * heures_nuit, 2)
     maj_dimanche = round(4.80 * heures_dimanche, 2)
     maj_samedi = round(2.40 * heures_samedi, 2)
@@ -100,11 +101,10 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Heure de fin": heure_fin.strftime("%H:%M"),
         "Tarif horaire": tarif_horaire,
         "Pause (h)": round(pause, 2),
-        "Heures brutes": round(heures_brutes, 2),
         "Heures totales": round(total_heures, 2),
         "Heures totales (hh:mm)": format_minutes(total_heures),
         "Salaire de base": salaire_base,
-        "Majoration 25% (heure sup)": maj_25_taux,
+        "Majoration 25% (heure sup)": round(tarif_horaire * 0.25, 2),
         "Heures sup (hh:mm)": format_minutes(heures_sup),
         "Heures samedi (hh:mm)": format_minutes(heures_samedi),
         "Heures dimanche (hh:mm)": format_minutes(heures_dimanche),
@@ -151,7 +151,7 @@ with col2:
             <b>Nom :</b> {dernier['Nom']} — <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']} — <b>Pause :</b> {dernier['Pause (h)']} h<br>
             <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']:.2f} h)<br>
             <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}<br>
-            <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
+            <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration heures sup']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
             <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}<br>
             <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}<br>
             <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}<br>
@@ -168,6 +168,12 @@ if submit:
 
 if st.session_state.data:
     df_result = pd.DataFrame(st.session_state.data)
+    for i, row in df_result.iterrows():
+        delete = st.button(f"Supprimer la ligne {i+1}", key=f"delete_{i}")
+        if delete:
+            st.session_state.data.pop(i)
+            st.experimental_rerun()
+
     st.dataframe(df_result, use_container_width=True, height=250)
 
     buffer = io.BytesIO()
@@ -178,7 +184,7 @@ if st.session_state.data:
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="📥 Télécharger le tableau Excel",
+        label="📅 Télécharger le tableau Excel",
         data=buffer.getvalue(),
         file_name="salaire_calculé.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
