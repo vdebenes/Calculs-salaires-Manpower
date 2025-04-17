@@ -3,6 +3,32 @@ import pandas as pd
 from datetime import datetime, timedelta, time, date as date_class
 import io
 
+# Fonction d'export Excel
+def generate_excel(df):
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Missions')
+        workbook = writer.book
+        worksheet = writer.sheets['Missions']
+
+        header_format = workbook.add_format({
+            'bold': True,
+            'text_wrap': True,
+            'valign': 'top',
+            'align': 'center',
+            'bg_color': '#FFB6C1',
+            'border': 1
+        })
+
+        for col_num, value in enumerate(df.columns.values):
+            worksheet.write(0, col_num, value, header_format)
+            column_len = max(df[value].astype(str).map(len).max(), len(value)) + 2
+            worksheet.set_column(col_num, col_num, column_len)
+
+        worksheet.freeze_panes(1, 0)
+    output.seek(0)
+    return output
+
 st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
 # Initialisation des états
