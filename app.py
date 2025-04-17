@@ -5,6 +5,12 @@ import io
 
 st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
+# Initialisation des états
+if "missions" not in st.session_state:
+    st.session_state.missions = []
+if "tarifs_par_nom" not in st.session_state:
+    st.session_state.tarifs_par_nom = {}
+
 st.markdown("""
     <style>
     .stTextInput, .stNumberInput, .stDateInput, .stTimeInput {
@@ -60,30 +66,33 @@ with col1:
 if st.session_state.missions:
     last = st.session_state.missions[-1]
     with col2:
-        st.markdown("""
-            <div class='recap-box'>
-            <strong>Résumé :</strong><br>
-            - Mission : {Mission}<br>
-            - Date : {Date}<br>
-            - Heure de début : {Heure de début} — Heure de fin : {Heure de fin}<br>
-            - Nom : {Nom}<br>
-            - Tarif horaire : CHF {Tarif horaire}<br>
-            - Heures brutes : {Heures totales} h<br>
-            - Pause : {Pause (h)}<br>
-            - Heures totales : {Heures totales (hh:mm)}<br>
-            - Salaire de base : CHF {Salaire de base}<br>
-            - Majoration 25% (heure sup) : CHF {Majoration 25% (heure sup)}<br>
-            - Heures sup : {Heures sup (hh:mm)}<br>
-            - Heures samedi : {Heures samedi (hh:mm)}<br>
-            - Heures dimanche : {Heures dimanche (hh:mm)}<br>
-            - Heures de nuit : {Heures de nuit (hh:mm)}<br>
-            - Majoration heures sup : CHF {Majoration heures sup}<br>
-            - Majoration samedi : CHF {Majoration samedi}<br>
-            - Majoration dimanche : CHF {Majoration dimanche}<br>
-            - Majoration nuit : CHF {Majoration nuit}<br>
-            - <strong>Salaire brut : CHF {Salaire total brut}</strong>
-            </div>
-        """.format(**last), unsafe_allow_html=True)
+        try:
+            st.markdown("""
+                <div class='recap-box'>
+                <strong>Résumé :</strong><br>
+                - Mission : {Mission}<br>
+                - Date : {Date}<br>
+                - Heure de début : {Heure de début} — Heure de fin : {Heure de fin}<br>
+                - Nom : {Nom}<br>
+                - Tarif horaire : CHF {Tarif horaire}<br>
+                - Heures brutes : {Heures totales} h<br>
+                - Pause : {Pause (h)}<br>
+                - Heures totales : {Heures totales (hh:mm)}<br>
+                - Salaire de base : CHF {Salaire de base}<br>
+                - Majoration 25% (heure sup) : CHF {Majoration 25% (heure sup)}<br>
+                - Heures sup : {Heures sup (hh:mm)}<br>
+                - Heures samedi : {Heures samedi (hh:mm)}<br>
+                - Heures dimanche : {Heures dimanche (hh:mm)}<br>
+                - Heures de nuit : {Heures de nuit (hh:mm)}<br>
+                - Majoration heures sup : CHF {Majoration heures sup}<br>
+                - Majoration samedi : CHF {Majoration samedi}<br>
+                - Majoration dimanche : CHF {Majoration dimanche}<br>
+                - Majoration nuit : CHF {Majoration nuit}<br>
+                - <strong>Salaire brut : CHF {Salaire total brut}</strong>
+                </div>
+            """.format(**last), unsafe_allow_html=True)
+        except KeyError as e:
+            st.error(f"Clé manquante dans les données du résumé : {e}")
 
     st.subheader("Tableau des missions")
     df_result = pd.DataFrame(st.session_state.missions)
