@@ -147,18 +147,18 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Informations de la mission")
-    numero_mission = st.text_input("Numéro de mission", "")
-    nom = st.text_input("Nom", "")
-    tarif_horaire = st.number_input("Tarif horaire", min_value=0.0, format="%.2f")
+    numero_mission = st.text_input("Numéro de mission", key="numero_mission")
+    nom = st.text_input("Nom", key="nom")
+    tarif_horaire = st.number_input("Tarif horaire", min_value=0.0, format="%.2f", key="tarif_horaire")
     date = st.date_input("Date")
     heure_debut = st.time_input("Heure de début", value=time(8, 0))
     heure_fin = st.time_input("Heure de fin", value=time(17, 0))
-    pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00", key="pause_str")
     if st.button("Vider le formulaire"):
-        st.session_state.nom = ""
-        st.session_state.tarif_horaire = 0.0
-        st.session_state.numero_mission = ""
-        st.stop()
+        for key in ["nom", "tarif_horaire", "numero_mission", "pause_str"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
 
 with col2:
     st.subheader("Résumé de la dernière mission")
