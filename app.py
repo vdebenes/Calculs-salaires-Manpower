@@ -14,6 +14,9 @@ def convert_pause_to_decimal(pause_str):
         if ":" in pause_str:
             h, m = map(int, pause_str.split(":"))
             return h + m / 60
+        elif "." in pause_str:
+            h, d = map(int, pause_str.split("."))
+            return h + d / 60 if d >= 6 else h + d * 0.1
         return float(pause_str)
     except:
         return 0.0
