@@ -9,6 +9,9 @@ st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 def init_data():
     return []
 
+if "missions" not in st.session_state:
+    st.session_state.missions = []
+
 def convert_pause_to_decimal(pause_str):
     try:
         if ":" in pause_str:
@@ -82,8 +85,12 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    salaire_base = round(total_heures * tarif_horaire, 2)
     maj_25_taux = round(tarif_horaire * 0.25, 2)
+
+    if heures_dimanche > 0 or heures_nuit > 0 or heures_samedi > 0:
+        heures_sup = 0
+
+    salaire_base = round(total_heures * tarif_horaire, 2)
     maj_sup = round(heures_sup * maj_25_taux, 2)
     maj_nuit = round(8.40 * heures_nuit, 2)
     maj_dimanche = round(4.80 * heures_dimanche, 2)
@@ -97,7 +104,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Heure de début": heure_debut.strftime("%H:%M"),
         "Heure de fin": heure_fin.strftime("%H:%M"),
         "Tarif horaire": tarif_horaire,
-        "Pause (h)": round(pause, 2),
+        "Pause (h)": f"{int(pause)}:{int((pause - int(pause)) * 60):02d}",
         "Heures totales": round(total_heures, 2),
         "Heures totales (hh:mm)": format_minutes(total_heures),
         "Salaire de base": salaire_base,
@@ -123,41 +130,38 @@ with st.form("salaire_form"):
     heure_debut = st.time_input("Heure de début", time(8, 0))
     heure_fin = st.time_input("Heure de fin", time(17, 0))
     pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-    submit = st.form_submit_button("Calculer")
+    submit = st.form_submit_button("Ajouter")
 
 if submit:
     pause = convert_pause_to_decimal(pause_str)
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    st.session_state.missions.append(result)
 
-    st.markdown(
-        f"""
-        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
-        <b>Résumé :</b><br>
-        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
-        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
-        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
-        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
-        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
-        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
-        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
-        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
-        <b>Salaire total brut : {result['Salaire total brut']:.2f} CHF</b>
-        </div>
-        """,
-        unsafe_allow_html=True
+if st.session_state.missions:
+    df_all = pd.DataFrame(st.session_state.missions)
+
+    st.dataframe(
+        df_all,
+        use_container_width=False,
+        height=300,
+        width=800
     )
 
-    df_result = pd.DataFrame([result])
+    for i, item in enumerate(st.session_state.missions):
+        if st.button(f"Supprimer ligne {i+1}", key=f"suppr_{i}"):
+            st.session_state.missions.pop(i)
+            st.experimental_rerun()
+
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_result.to_excel(writer, index=False, sheet_name="Salaire")
-        worksheet = writer.sheets["Salaire"]
-        for idx, col in enumerate(df_result.columns):
+        df_all.to_excel(writer, index=False, sheet_name="Salaires")
+        worksheet = writer.sheets["Salaires"]
+        for idx, col in enumerate(df_all.columns):
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="📥 Télécharger le résultat en Excel",
+        label="📥 Télécharger toutes les missions en Excel",
         data=buffer.getvalue(),
-        file_name="salaire_calculé.xlsx",
+        file_name="toutes_les_missions.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
