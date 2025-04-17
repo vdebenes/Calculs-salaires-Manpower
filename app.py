@@ -113,7 +113,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     else:
         maj_sup = round(heures_sup * maj_25_taux, 2)
 
-    salaire_base = round((heures_normales + heures_sup) * tarif_horaire, 2)
+    # ✅ Correction ici : on inclut toutes les heures dans le salaire de base
+    salaire_base = round((heures_normales + heures_sup + heures_samedi + heures_dimanche + heures_nuit) * tarif_horaire, 2)
     maj_nuit = round(8.40 * heures_nuit, 2)
     maj_dimanche = round(4.80 * heures_dimanche, 2)
     maj_samedi = round(2.40 * heures_samedi, 2)
@@ -141,6 +142,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+
+# Le reste de l'interface est déjà bon.
+
 
 # Interface utilisateur
 col1, col2 = st.columns(2)
