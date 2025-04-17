@@ -82,6 +82,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
+    heures_sup = max(0, total_heures - (heures_nuit + heures_dimanche + heures_samedi))
+
     salaire_base = round(total_heures * tarif_horaire, 2)
     maj_25_taux = round(tarif_horaire * 0.25, 2)
     maj_sup = round(heures_sup * maj_25_taux, 2)
@@ -114,16 +116,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-def generate_excel(df):
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name="Salaire")
-        worksheet = writer.sheets["Salaire"]
-        for idx, col in enumerate(df.columns):
-            worksheet.set_column(idx, idx, max(15, len(col) + 2))
-    return buffer.getvalue()
-
-st.title("🧾 Calculateur de salaire Manpower")
+# Interface utilisateur
+st.title("Calculateur de salaire Manpower")
 
 if "data" not in st.session_state:
     st.session_state.data = []
@@ -131,62 +125,61 @@ if "data" not in st.session_state:
 col1, col2 = st.columns([2, 3])
 
 with col1:
-    st.subheader("Données de base")
-    numero_mission = st.text_input("Numéro de mission")
-    nom = st.text_input("Nom du collaborateur")
-    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, format="%.2f")
-    date = st.date_input("Date de la mission", value=datetime.today())
-    heure_debut = st.time_input("Heure de début", value=time(8, 0))
-    heure_fin = st.time_input("Heure de fin", value=time(17, 0))
-    pause_str = st.text_input("Pause (hh:mm ou h.mm)", value="0:00")
+    with st.form("formulaire"):
+        numero_mission = st.text_input("Numéro de mission")
+        nom = st.text_input("Nom")
+        tarif_horaire = st.number_input("Tarif horaire", min_value=0.0, step=0.05)
+        date = st.date_input("Date")
+        heure_debut = st.time_input("Heure de début", value=time(8, 0))
+        heure_fin = st.time_input("Heure de fin", value=time(17, 0))
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
 
-    if st.button("Calculer"):
-        pause_decimal = convert_pause_to_decimal(pause_str)
-        result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause_decimal, numero_mission)
-        st.session_state.data.append(result)
-
-    if st.button("Vider le formulaire"):
-        st.session_state.nom = ""
-        st.session_state.numero_mission = ""
-        st.session_state.tarif_horaire = 0.0
-        st.session_state.date = datetime.today()
-        st.session_state.heure_debut = time(8, 0)
-        st.session_state.heure_fin = time(17, 0)
-        st.session_state.pause_str = "0:00"
-        st.rerun()
+        col_gauche, col_droite = st.columns([1, 1])
+        with col_gauche:
+            submit = st.form_submit_button("Calculer salaire")
+        with col_droite:
+            if st.form_submit_button("Vider le formulaire"):
+                st.experimental_rerun()
 
 with col2:
-    st.subheader("Résumé de la dernière mission")
     if st.session_state.data:
         dernier = st.session_state.data[-1]
         st.markdown(
             f"""
-            <div style='background-color:#ffe6f0;padding:10px;border-radius:10px;'>
-                <b>Mission :</b> {dernier['Mission']} — <b>Date :</b> {dernier['Date']}<br>
-                <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}<br>
-                <b>Nom :</b> {dernier['Nom']} — <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']:.2f}<br>
-                <b>Pause :</b> {dernier['Pause (h)']} h<br>
-                <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']:.2f} h)<br>
-                <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}<br>
-                <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
-                <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}<br>
-                <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}<br>
-                <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}<br>
-                <b>Total brut :</b> <span style='font-weight:bold;'>CHF {dernier['Salaire total brut']:.2f}</span>
+            <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
+            <b>Mission :</b> {dernier['Mission']} — <b>Date :</b> {dernier['Date']} — <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}<br>
+            <b>Nom :</b> {dernier['Nom']} — <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']} — <b>Pause :</b> {dernier['Pause (h)']} h<br>
+            <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']:.2f} h)<br>
+            <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}<br>
+            <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
+            <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}<br>
+            <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}<br>
+            <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}<br>
+            <b>Total brut :</b> <b>CHF {dernier['Salaire total brut']:.2f}</b>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-st.subheader("Historique des calculs")
+if submit:
+    pause = convert_pause_to_decimal(pause_str)
+    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    st.session_state.data.append(result)
+
 if st.session_state.data:
     df_result = pd.DataFrame(st.session_state.data)
-    st.dataframe(df_result, height=300)
+    st.dataframe(df_result, use_container_width=True, height=250)
 
-    excel_data = generate_excel(df_result)
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name="Salaire")
+        worksheet = writer.sheets["Salaire"]
+        for idx, col in enumerate(df_result.columns):
+            worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
     st.download_button(
-        label="📥 Télécharger en Excel",
-        data=excel_data,
-        file_name="missions_salaire_manpower.xlsx",
+        label="📥 Télécharger le tableau Excel",
+        data=buffer.getvalue(),
+        file_name="salaire_calculé.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
