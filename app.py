@@ -8,7 +8,14 @@ st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 st.markdown("""
     <style>
     .stTextInput, .stNumberInput, .stDateInput, .stTimeInput {
-        max-width: 400px;
+        max-width: 350px;
+    }
+    .recap-box {
+        background-color: #ffe6f0;
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin: 10px 0;
+        font-size: 16px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -150,8 +157,16 @@ if submit:
     st.session_state.missions.append(result)
     st.session_state.tarifs_par_nom[nom] = tarif_horaire
 
+if st.button("🗑️ Vider toutes les lignes"):
+    st.session_state.missions.clear()
+    st.experimental_rerun()
+
 if st.session_state.missions:
     df_all = pd.DataFrame(st.session_state.missions)
+
+    st.markdown("<div class='recap-box'><b>Résumé de la dernière mission :</b><br>" +
+        "<br>".join([f"{key} : {value}" for key, value in st.session_state.missions[-1].items()]) +
+        "</div>", unsafe_allow_html=True)
 
     st.dataframe(
         df_all,
