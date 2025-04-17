@@ -63,25 +63,18 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         is_samedi = jour_semaine == "Samedi"
         minute_in_hour = minute_count / 60
 
-        taux_majorations = {
-            "nuit": 8.40 if is_nuit else 0,
-            "dimanche": 4.80 if is_dimanche else 0,
-            "samedi": 2.40 if is_samedi else 0,
-            "sup": tarif_horaire * 0.25 if minute_in_hour >= 9.5 and not (is_nuit or is_dimanche or is_samedi) else 0
-        }
+        sup_possible = minute_in_hour >= 9.5 and not (is_nuit or is_dimanche or is_samedi)
 
-        max_cat = max(taux_majorations, key=taux_majorations.get)
-
-        if taux_majorations[max_cat] == 0:
-            heures_normales += 1 / 60
-        elif max_cat == "nuit":
+        if is_nuit:
             heures_nuit += 1 / 60
-        elif max_cat == "dimanche":
+        elif is_dimanche:
             heures_dimanche += 1 / 60
-        elif max_cat == "samedi":
+        elif is_samedi:
             heures_samedi += 1 / 60
-        elif max_cat == "sup":
+        elif sup_possible:
             heures_sup += 1 / 60
+        else:
+            heures_normales += 1 / 60
 
         current += timedelta(minutes=1)
         minute_count += 1
@@ -184,7 +177,7 @@ if st.session_state.data:
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="📅 Télécharger le tableau Excel",
+        label="🗕️ Télécharger le tableau Excel",
         data=buffer.getvalue(),
         file_name="salaire_calculé.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
