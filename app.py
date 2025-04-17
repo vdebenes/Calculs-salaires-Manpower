@@ -47,35 +47,26 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     }
     jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
 
-    # Liste des jours fériés 2025 assimilés au dimanche
     jours_feries = {
-        date_class(2025, 1, 1),   # Nouvel An
-        date_class(2025, 4, 18),  # Vendredi Saint
-        date_class(2025, 4, 21),  # Lundi de Pâques
-        date_class(2025, 5, 29),  # Ascension
-        date_class(2025, 6, 9),   # Lundi de Pentecôte
-        date_class(2025, 8, 1),   # Fête nationale
-        date_class(2025, 9, 22),  # Lundi du Jeûne
-        date_class(2025, 12, 25)  # Noël
+        date_class(2025, 1, 1), date_class(2025, 4, 18), date_class(2025, 4, 21),
+        date_class(2025, 5, 29), date_class(2025, 6, 9), date_class(2025, 8, 1),
+        date_class(2025, 9, 22), date_class(2025, 12, 25)
     }
-
     is_jour_ferie = date in jours_feries
 
-    heures_nuit = 0.0
-    heures_dimanche = 0.0
-    heures_samedi = 0.0
-    heures_normales = 0.0
-    heures_sup = 0.0
+    heures_nuit = heures_dimanche = heures_samedi = heures_normales = heures_sup = 0.0
     current = heure_debut
-    minutes_total = 0
+    pause_minutes = int(pause * 60)
+    total_minutes = int((heure_fin - heure_debut).total_seconds() / 60)
+    worked_minutes = total_minutes - pause_minutes
+    minute_count = 0
 
-    while current < heure_fin:
+    while minute_count < worked_minutes:
         h = current.time()
         is_nuit = h >= time(23, 0) or h < time(6, 0)
         is_dimanche = jour_semaine == "Dimanche" or is_jour_ferie
         is_samedi = jour_semaine == "Samedi"
-
-        minute_in_hour = minutes_total / 60
+        minute_in_hour = minute_count / 60
 
         if is_nuit:
             heures_nuit += 1 / 60
@@ -89,7 +80,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
             heures_normales += 1 / 60
 
         current += timedelta(minutes=1)
-        minutes_total += 1
+        minute_count += 1
 
     salaire_base = round(total_heures * tarif_horaire, 2)
     maj_25_taux = round(tarif_horaire * 0.25, 2)
@@ -122,7 +113,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-# Interface utilisateur
 st.title("Calculateur de salaire Manpower")
 
 with st.form("salaire_form"):
@@ -139,27 +129,32 @@ if submit:
     pause = convert_pause_to_decimal(pause_str)
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
 
-    st.success("Calcul effectué !")
-    
-    with st.expander("Résumé des calculs", expanded=True):
-        for k, v in result.items():
-            if isinstance(v, float):
-                if "CHF" not in k and not k.startswith("Heures"):
-                    st.write(f"**{k}** : {v:.2f} CHF")
-                else:
-                    st.write(f"**{k}** : {v}")
-            else:
-                st.write(f"**{k}** : {v}")
+    st.markdown(
+        f"""
+        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
+        <b>Résumé :</b><br>
+        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
+        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
+        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
+        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
+        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
+        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
+        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
+        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
+        <b>Salaire total brut : {result['Salaire total brut']:.2f} CHF</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     df_result = pd.DataFrame([result])
-
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
         df_result.to_excel(writer, index=False, sheet_name="Salaire")
         worksheet = writer.sheets["Salaire"]
         for idx, col in enumerate(df_result.columns):
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
-    
+
     st.download_button(
         label="📥 Télécharger le résultat en Excel",
         data=buffer.getvalue(),
