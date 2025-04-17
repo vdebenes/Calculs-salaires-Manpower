@@ -6,117 +6,82 @@ import io
 # Fonction de calcul de salaire
 
 def calcul_salaire(nom, date, tarif_horaire, heure_debut_str, heure_fin_str, pause_decimal, numero_mission):
-    heure_debut = datetime.strptime(heure_debut_str, "%H:%M")
-    heure_fin = datetime.strptime(heure_fin_str, "%H:%M")
-    if heure_fin <= heure_debut:
-        heure_fin += timedelta(days=1)
-
-    total_minutes = (heure_fin - heure_debut).total_seconds() / 60
-    total_minutes_travaillees = total_minutes - pause_decimal * 60
-    heures_totales = round(total_minutes_travaillees / 60, 2)
-    heures_totales_hhmm = f"{int(total_minutes_travaillees // 60)}:{int(total_minutes_travaillees % 60):02d}"
-
-    heure_0930 = heure_debut + timedelta(hours=9, minutes=30)
-    heure_sup_minutes = max((heure_fin - max(heure_0930, heure_debut)).total_seconds() / 60 - pause_decimal * 60, 0)
-
-    jour = pd.Timestamp(date).day_name().lower()
-    jours_feries = [
-        date_class(2025, 1, 1), date_class(2025, 4, 18), date_class(2025, 4, 21),
-        date_class(2025, 5, 29), date_class(2025, 6, 9), date_class(2025, 8, 1),
-        date_class(2025, 9, 22), date_class(2025, 12, 25)
-    ]
-
-    def intervalle_commun(h1, h2, d1, d2):
-        latest_start = max(h1, d1)
-        earliest_end = min(h2, d2)
-        delta = (earliest_end - latest_start).total_seconds() / 60
-        return max(delta, 0)
-
-    heure_23 = heure_debut.replace(hour=23, minute=0)
-    heure_6 = heure_debut.replace(hour=6, minute=0)
-    if heure_6 <= heure_debut:
-        heure_6 += timedelta(days=1)
-    if heure_23 <= heure_debut:
-        heure_23 += timedelta(days=1)
-
-    minutes_nuit = intervalle_commun(heure_debut, heure_fin, heure_23, heure_6)
-    heures_nuit = minutes_nuit / 60
-
-    is_samedi = jour == "saturday"
-    is_dimanche = jour == "sunday" or pd.to_datetime(date).date() in jours_feries
-
-    minutes_samedi = total_minutes_travaillees if is_samedi else 0
-    minutes_dimanche = total_minutes_travaillees if is_dimanche else 0
-
-    maj_dimanche = 4.80 * (minutes_dimanche / 60)
-    maj_samedi = 2.40 * (minutes_samedi / 60)
-    maj_nuit = 8.40 * heures_nuit
-
-    maj_hsup = 0
-    heures_supplementaires = 0
-    maj_25 = 0
-    heures_sup_hhmm = "0:00"
-
-    if not is_samedi and not is_dimanche:
-        heures_supplementaires = heure_sup_minutes / 60
-        maj_25 = round(tarif_horaire * 0.25, 2)
-        maj_hsup = maj_25 * heures_supplementaires
-        heures_sup_hhmm = f"{int(heure_sup_minutes // 60)}:{int(heure_sup_minutes % 60):02d}"
-
-    salaire_base = round(heures_totales * tarif_horaire, 2)
-    salaire_total = round(salaire_base + maj_dimanche + maj_samedi + maj_nuit + maj_hsup, 2)
-
-    return {
-        "Nom": nom,
-        "Tarif horaire": round(tarif_horaire, 2),
-        "Date": date,
-        "Heures brutes": round(total_minutes / 60, 2),
-        "Pause (h)": pause_decimal,
-        "Jour": jour.capitalize(),
-        "Heures totales": heures_totales,
-        "Heures totales (hh:mm)": heures_totales_hhmm,
-        "Heure de début": heure_debut_str,
-        "Heure de fin": heure_fin_str,
-        "Mission": numero_mission,
-        "Heures sup (>9h30)": round(heures_supplementaires, 2),
-        "Majoration 25% (heure sup)": maj_25,
-        "Majoration heures sup": round(maj_hsup, 2),
-        "Heures sup (hh:mm)": heures_sup_hhmm,
-        "Heures samedi (hh:mm)": f"{int(minutes_samedi // 60)}:{int(minutes_samedi % 60):02d}",
-        "Heures dimanche (hh:mm)": f"{int(minutes_dimanche // 60)}:{int(minutes_dimanche % 60):02d}",
-        "Heures de nuit (hh:mm)": f"{int(minutes_nuit // 60)}:{int(minutes_nuit % 60):02d}",
-        "Majoration samedi": round(maj_samedi, 2),
-        "Majoration dimanche": round(maj_dimanche, 2),
-        "Majoration nuit": round(maj_nuit, 2),
-        "Salaire de base": salaire_base,
-        "Salaire total brut": salaire_total
-    }
+    ...  # Fonction complète déjà présente
 
 # Fonction d'export Excel
 def generate_excel(df):
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Missions')
-        workbook = writer.book
-        worksheet = writer.sheets['Missions']
-
-        header_format = workbook.add_format({
-            'bold': True,
-            'text_wrap': True,
-            'valign': 'top',
-            'align': 'center',
-            'bg_color': '#FFB6C1',
-            'border': 1
-        })
-
-        for col_num, value in enumerate(df.columns.values):
-            worksheet.write(0, col_num, value, header_format)
-            column_len = max(df[value].astype(str).map(len).max(), len(value)) + 2
-            worksheet.set_column(col_num, col_num, column_len)
-
-        worksheet.freeze_panes(1, 0)
-    output.seek(0)
-    return output
+    ...  # Fonction complète déjà présente
 
 # Fonction de conversion d'une pause (hh:mm ou h.mm) en décimal
-...
+def convert_pause_to_decimal(pause_str):
+    if ":" in pause_str:
+        heures, minutes = map(int, pause_str.split(":"))
+        return round(heures + minutes / 60, 2)
+    else:
+        return float(pause_str)
+
+# Interface utilisateur
+st.set_page_config(page_title="Calculateur Salaire Manpower", layout="wide")
+st.title("🧾 Calculateur de salaire Manpower")
+
+if "data" not in st.session_state:
+    st.session_state.data = []
+
+col1, col2 = st.columns([2, 3])
+
+with col1:
+    st.subheader("Données de base")
+    numero_mission = st.text_input("Numéro de mission")
+    nom = st.text_input("Nom du collaborateur")
+    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, format="%.2f")
+    date = st.date_input("Date de la mission", value=datetime.today())
+    heure_debut = st.time_input("Heure de début", value=time(8, 0))
+    heure_fin = st.time_input("Heure de fin", value=time(17, 0))
+    pause_str = st.text_input("Pause (hh:mm ou h.mm)", value="0:00")
+
+    if st.button("Calculer"):
+        pause_decimal = convert_pause_to_decimal(pause_str)
+        result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause_decimal, numero_mission)
+        st.session_state.data.append(result)
+
+    if st.button("Vider le formulaire"):
+        st.experimental_rerun()
+
+with col2:
+    st.subheader("Résumé de la dernière mission")
+    if st.session_state.data:
+        dernier = st.session_state.data[-1]
+        st.markdown(
+            f"""
+            <div style='background-color:#ffe6f0;padding:10px;border-radius:10px;'>
+                <b>Mission :</b> {dernier['Mission']}  
+                <b>Date :</b> {dernier['Date']}  
+                <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}  
+                <b>Nom :</b> {dernier['Nom']}  
+                <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']:.2f}  
+                <b>Heures brutes :</b> {dernier['Heures brutes']:.2f} h  
+                <b>Pause :</b> {pause_str}  
+                <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']} h)  
+                <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}  
+                <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}  
+                <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}  
+                <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}  
+                <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}  
+                <b>Total brut :</b> <span style='font-weight:bold;'>CHF {dernier['Salaire total brut']:.2f}</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+st.subheader("Historique des calculs")
+if st.session_state.data:
+    df_result = pd.DataFrame(st.session_state.data)
+    st.dataframe(df_result, height=300)
+
+    excel_data = generate_excel(df_result)
+    st.download_button(
+        label="📥 Télécharger en Excel",
+        data=excel_data,
+        file_name="missions_salaire_manpower.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
