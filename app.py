@@ -18,6 +18,11 @@ def convert_pause_to_decimal(pause_str):
     except:
         return 0.0
 
+def format_minutes(decimal_hours):
+    heures = int(decimal_hours)
+    minutes = int(round((decimal_hours - heures) * 60))
+    return f"{heures}:{minutes:02d}"
+
 def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
     heure_debut = datetime.strptime(heure_debut, "%H:%M")
     heure_fin = datetime.strptime(heure_fin, "%H:%M")
@@ -89,7 +94,11 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause):
         "Heures dimanche": round(heures_dimanche, 2),
         "Majoration dimanche": maj_dimanche,
         "Salaire de base": salaire_base,
-        "Salaire total brut": total_brut
+        "Salaire total brut": total_brut,
+        "h sup brut": heures_sup_minutes,
+        "h nuit brut": round(heures_nuit, 2),
+        "h samedi brut": round(heures_samedi, 2),
+        "h dimanche brut": round(heures_dimanche, 2)
     }
 
 st.title("🗞 Calculateur de salaire Manpower")
@@ -114,21 +123,18 @@ with st.form("formulaire"):
         data.append(result)
         st.session_state["data"] = data
 
-        heures = int(result['Heures totales'])
-        minutes = int((result['Heures totales'] - heures) * 60)
-
         st.markdown(f"""
             <div style='background-color:#ffe6e6;padding:10px;border-radius:5px;'>
             <strong>Résumé :</strong><br>
             - Heures brutes : <strong>{result['Heures brutes']:.2f} h</strong><br>
             - Pause : <strong>{result['Pause (h)']:.2f} h</strong><br>
-            - Heures totales : <strong>{heures}h{minutes:02d}</strong> (soit {result['Heures totales']:.2f} h)<br>
+            - Heures totales : <strong>{format_minutes(result['Heures totales'])}</strong><br>
             - Salaire brut : <strong>CHF {result['Salaire total brut']:.2f}</strong><br>
             - Majoration 25% (heure sup) : <strong>CHF {result['Majoration 25%']:.2f} / h</strong><br>
-            - Heures sup : <strong>{result['Heures sup (>9h30)']}</strong><br>
-            - Heures samedi : <strong>{result['Heures samedi']:.2f} h</strong><br>
-            - Heures dimanche : <strong>{result['Heures dimanche']:.2f} h</strong><br>
-            - Heures de nuit : <strong>{result['Heures de nuit']:.2f} h</strong><br>
+            - Heures sup : <strong>{format_minutes(result['h sup brut']/60)}</strong><br>
+            - Heures samedi : <strong>{format_minutes(result['h samedi brut'])}</strong><br>
+            - Heures dimanche : <strong>{format_minutes(result['h dimanche brut'])}</strong><br>
+            - Heures de nuit : <strong>{format_minutes(result['h nuit brut'])}</strong><br>
             - Majoration nuit : <strong>CHF {result['Majoration nuit']:.2f}</strong>
             </div>
         """, unsafe_allow_html=True)
