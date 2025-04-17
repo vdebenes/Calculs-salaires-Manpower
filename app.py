@@ -104,3 +104,79 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+st.title("🗞 Calculateur de salaire Manpower")
+data = st.session_state.get("data", init_data())
+
+with st.form("formulaire"):
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        numero_mission = st.text_input("Numéro de mission")
+        nom = st.text_input("Nom")
+        date = st.date_input("Date")
+    with col2:
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.01)
+        pause_str = st.text_input("Pause (hh:mm ou h)", value="0:00")
+    with col3:
+        heure_debut = st.time_input("Heure de début")
+        heure_fin = st.time_input("Heure de fin")
+
+    submitted = st.form_submit_button("Ajouter")
+    if submitted:
+        pause = convert_pause_to_decimal(pause_str)
+        result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+        data.append(result)
+        st.session_state["data"] = data
+
+        st.markdown(f"""
+            <div style='background-color:#ffe6e6;padding:10px;border-radius:5px;'>
+            <strong>Résumé :</strong><br>
+            - Mission : <strong>{result['Mission']}</strong><br>
+            - Date : <strong>{result['Date']}</strong><br>
+            - Heure de début : <strong>{result['Heure de début']}</strong> — Heure de fin : <strong>{result['Heure de fin']}</strong><br>
+            - Nom : <strong>{result['Nom']}</strong><br>
+            - Tarif horaire : <strong>CHF {result['Tarif horaire']:.2f}</strong><br>
+            - Heures brutes : <strong>{result['Heures totales'] + result['Pause (h)']:.2f} h</strong><br>
+            - Pause : <strong>{result['Pause (h)']:.2f} h</strong><br>
+            - Heures totales : <strong>{result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)</strong><br>
+            - Salaire de base : <strong>CHF {result['Salaire de base']:.2f}</strong><br>
+            - Majoration 25% (heure sup) : <strong>CHF {result['Majoration 25% (heure sup)']:.2f} / h</strong><br>
+            - Heures sup : <strong>{result['Heures sup (hh:mm)']}</strong><br>
+            - Heures samedi : <strong>{result['Heures samedi (hh:mm)']}</strong><br>
+            - Heures dimanche : <strong>{result['Heures dimanche (hh:mm)']}</strong><br>
+            - Heures de nuit : <strong>{result['Heures de nuit (hh:mm)']}</strong><br>
+            - Majoration heures sup : <strong>CHF {result['Majoration heures sup']:.2f}</strong><br>
+            - Majoration samedi : <strong>CHF {result['Majoration samedi']:.2f}</strong><br>
+            - Majoration dimanche : <strong>CHF {result['Majoration dimanche']:.2f}</strong><br>
+            - Majoration nuit : <strong>CHF {result['Majoration nuit']:.2f}</strong><br>
+            - Salaire brut : <strong>CHF {result['Salaire total brut']:.2f}</strong>
+            </div>
+        """, unsafe_allow_html=True)
+
+if data:
+    df_result = pd.DataFrame(data)[[
+        "Mission", "Nom", "Date", "Heure de début", "Heure de fin", "Tarif horaire",
+        "Pause (h)", "Heures totales", "Heures totales (hh:mm)", "Salaire de base",
+        "Majoration 25% (heure sup)", "Heures sup (hh:mm)", "Heures samedi (hh:mm)",
+        "Heures dimanche (hh:mm)", "Heures de nuit (hh:mm)", "Majoration heures sup",
+        "Majoration samedi", "Majoration dimanche", "Majoration nuit", "Salaire total brut"
+    ]]
+    st.dataframe(df_result, use_container_width=True)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name='Salaires')
+        workbook = writer.book
+        worksheet = writer.sheets['Salaires']
+        for i, col in enumerate(df_result.columns):
+            column_len = max(df_result[col].astype(str).map(len).max(), len(col)) + 1
+            worksheet.set_column(i, i, column_len)
+        worksheet.freeze_panes(1, 0)
+
+    st.download_button(
+        label="📅 Télécharger le tableau en Excel",
+        data=output.getvalue(),
+        file_name='salaires_manpower.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+else:
+    st.info("Aucune donnée enregistrée.")
