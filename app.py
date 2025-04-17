@@ -138,3 +138,42 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+
+# Interface utilisateur ici
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Informations de la mission")
+    numero_mission = st.text_input("Numéro de mission", "")
+    nom = st.text_input("Nom", "")
+    tarif_horaire = st.number_input("Tarif horaire", min_value=0.0, format="%.2f")
+    date = st.date_input("Date")
+    heure_debut = st.time_input("Heure de début", value=time(8, 0))
+    heure_fin = st.time_input("Heure de fin", value=time(17, 0))
+    pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    if st.button("Vider le formulaire"):
+        st.experimental_rerun()
+
+with col2:
+    st.subheader("Résumé de la dernière mission")
+    if st.session_state.missions:
+        last = st.session_state.missions[-1]
+        with st.container():
+            st.markdown("<div class='recap-box'>" +
+                f"<b>Mission :</b> {last['Mission']} — <b>Date :</b> {last['Date']} — <b>Heure de début :</b> {last['Heure de début']} — <b>Heure de fin :</b> {last['Heure de fin']}<br>" +
+                f"<b>Nom :</b> {last['Nom']} — <b>Tarif horaire :</b> CHF {last['Tarif horaire']} — <b>Pause :</b> {last['Pause (h)']}<br>" +
+                f"<b>Heures totales :</b> {last['Heures totales (hh:mm)']} (soit {last['Heures totales']} h)<br>" +
+                f"<b>Salaire de base :</b> CHF {last['Salaire de base']}<br>" +
+                f"<b>Majoration 25% (heure sup) :</b> CHF {last['Majoration 25% (heure sup)']} — <b>Heures sup :</b> {last['Heures sup (hh:mm)']}<br>" +
+                f"<b>Heures samedi :</b> {last['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {last['Majoration samedi']}<br>" +
+                f"<b>Heures dimanche :</b> {last['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {last['Majoration dimanche']}<br>" +
+                f"<b>Heures de nuit :</b> {last['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {last['Majoration nuit']}<br>" +
+                f"<b>Salaire total brut :</b> <b>CHF {last['Salaire total brut']}</b>" +
+                "</div>", unsafe_allow_html=True)
+
+if st.button("Calculer salaire"):
+    pause_decimal = convert_pause_to_decimal(pause_str)
+    resultat = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause_decimal, numero_mission)
+    st.session_state.missions.append(resultat)
+    st.session_state.tarifs_par_nom[nom] = tarif_horaire
+    st.experimental_rerun()
