@@ -154,7 +154,7 @@ if data:
         "Heures dimanche", "Majoration dimanche",
         "Heures de nuit", "Majoration nuit",
         "Salaire de base", "Salaire total brut"
-    ]
+    ]]
     st.dataframe(df_result, use_container_width=True)
 
     output = io.BytesIO()
