@@ -140,16 +140,19 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
 st.title("Calculateur de salaire Manpower")
 
-with st.form("salaire_form"):
-    nom = st.text_input("Nom du collaborateur")
-    numero_mission = st.text_input("Numéro de mission")
-    date = st.date_input("Date de la mission")
-    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05,
-        value=st.session_state.tarifs_par_nom.get(nom, 0.0))
-    heure_debut = st.time_input("Heure de début", time(8, 0))
-    heure_fin = st.time_input("Heure de fin", time(17, 0))
-    pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-    submit = st.form_submit_button("Ajouter")
+col_form, col_recap = st.columns([1, 1])
+
+with col_form:
+    with st.form("salaire_form"):
+        nom = st.text_input("Nom du collaborateur")
+        numero_mission = st.text_input("Numéro de mission")
+        date = st.date_input("Date de la mission")
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05,
+            value=st.session_state.tarifs_par_nom.get(nom, 0.0))
+        heure_debut = st.time_input("Heure de début", time(8, 0))
+        heure_fin = st.time_input("Heure de fin", time(17, 0))
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+        submit = st.form_submit_button("Ajouter")
 
 if submit:
     pause = convert_pause_to_decimal(pause_str)
@@ -164,9 +167,10 @@ if st.button("🗑️ Vider toutes les lignes"):
 if st.session_state.missions:
     df_all = pd.DataFrame(st.session_state.missions)
 
-    st.markdown("<div class='recap-box'><b>Résumé de la dernière mission :</b><br>" +
-        "<br>".join([f"{key} : {value}" for key, value in st.session_state.missions[-1].items()]) +
-        "</div>", unsafe_allow_html=True)
+    with col_recap:
+        st.markdown("<div class='recap-box'><b>Résumé de la dernière mission :</b><br>" +
+            "<br>".join([f"{key} : {value}" for key, value in st.session_state.missions[-1].items()]) +
+            "</div>", unsafe_allow_html=True)
 
     st.dataframe(
         df_all,
