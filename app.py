@@ -3,13 +3,117 @@ import pandas as pd
 from datetime import datetime, timedelta, time, date as date_class
 import io
 
-# Fonction de calcul de salaire
+st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
-def calcul_salaire(nom, date, tarif_horaire, heure_debut_str, heure_fin_str, pause_decimal, numero_mission):
-    # Cette fonction doit être implémentée ou conservée depuis la version précédente
-    pass
+@st.cache_data
+def init_data():
+    return []
 
-# Fonction d'export Excel
+def convert_pause_to_decimal(pause_str):
+    try:
+        if ":" in pause_str:
+            h, m = map(int, pause_str.split(":"))
+            return h + m / 60
+        elif "." in pause_str:
+            h, d = map(int, pause_str.split("."))
+            return h + d / 60 if d >= 6 else h + d * 0.1
+        return float(pause_str)
+    except:
+        return 0.0
+
+def format_minutes(decimal_hours):
+    heures = int(decimal_hours)
+    minutes = int(round((decimal_hours - heures) * 60))
+    return f"{heures}:{minutes:02d}"
+
+def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, numero_mission):
+    heure_debut = datetime.strptime(heure_debut, "%H:%M")
+    heure_fin = datetime.strptime(heure_fin, "%H:%M")
+    if heure_fin <= heure_debut:
+        heure_fin += timedelta(days=1)
+
+    heures_brutes = (heure_fin - heure_debut).total_seconds() / 3600
+    total_heures = heures_brutes - pause
+
+    jour_en = pd.Timestamp(date).day_name().lower()
+    jours_fr = {
+        "monday": "Lundi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi",
+        "thursday": "Jeudi",
+        "friday": "Vendredi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche"
+    }
+    jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
+
+    jours_feries = {
+        date_class(2025, 1, 1), date_class(2025, 4, 18), date_class(2025, 4, 21),
+        date_class(2025, 5, 29), date_class(2025, 6, 9), date_class(2025, 8, 1),
+        date_class(2025, 9, 22), date_class(2025, 12, 25)
+    }
+    is_jour_ferie = date in jours_feries
+
+    heures_nuit = heures_dimanche = heures_samedi = heures_normales = heures_sup = 0.0
+    current = heure_debut
+    pause_minutes = int(pause * 60)
+    total_minutes = int((heure_fin - heure_debut).total_seconds() / 60)
+    worked_minutes = total_minutes - pause_minutes
+    minute_count = 0
+
+    while minute_count < worked_minutes:
+        h = current.time()
+        is_nuit = h >= time(23, 0) or h < time(6, 0)
+        is_dimanche = jour_semaine == "Dimanche" or is_jour_ferie
+        is_samedi = jour_semaine == "Samedi"
+        minute_in_hour = minute_count / 60
+
+        if is_nuit:
+            heures_nuit += 1 / 60
+        elif is_dimanche:
+            heures_dimanche += 1 / 60
+        elif is_samedi:
+            heures_samedi += 1 / 60
+        elif minute_in_hour >= 9.5:
+            heures_sup += 1 / 60
+        else:
+            heures_normales += 1 / 60
+
+        current += timedelta(minutes=1)
+        minute_count += 1
+
+    salaire_base = round(total_heures * tarif_horaire, 2)
+    maj_25_taux = round(tarif_horaire * 0.25, 2)
+    maj_sup = round(heures_sup * maj_25_taux, 2)
+    maj_nuit = round(8.40 * heures_nuit, 2)
+    maj_dimanche = round(4.80 * heures_dimanche, 2)
+    maj_samedi = round(2.40 * heures_samedi, 2)
+    total_brut = round(salaire_base + maj_sup + maj_nuit + maj_dimanche + maj_samedi, 2)
+
+    return {
+        "Mission": numero_mission,
+        "Nom": nom,
+        "Date": date.strftime("%Y-%m-%d"),
+        "Heure de début": heure_debut.strftime("%H:%M"),
+        "Heure de fin": heure_fin.strftime("%H:%M"),
+        "Tarif horaire": tarif_horaire,
+        "Pause (h)": round(pause, 2),
+        "Heures brutes": round(heures_brutes, 2),
+        "Heures totales": round(total_heures, 2),
+        "Heures totales (hh:mm)": format_minutes(total_heures),
+        "Salaire de base": salaire_base,
+        "Majoration 25% (heure sup)": maj_25_taux,
+        "Heures sup (hh:mm)": format_minutes(heures_sup),
+        "Heures samedi (hh:mm)": format_minutes(heures_samedi),
+        "Heures dimanche (hh:mm)": format_minutes(heures_dimanche),
+        "Heures de nuit (hh:mm)": format_minutes(heures_nuit),
+        "Majoration heures sup": maj_sup,
+        "Majoration samedi": maj_samedi,
+        "Majoration dimanche": maj_dimanche,
+        "Majoration nuit": maj_nuit,
+        "Salaire total brut": total_brut
+    }
+
 def generate_excel(df):
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
@@ -19,16 +123,6 @@ def generate_excel(df):
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
     return buffer.getvalue()
 
-# Fonction de conversion d'une pause (hh:mm ou h.mm) en décimal
-def convert_pause_to_decimal(pause_str):
-    if ":" in pause_str:
-        heures, minutes = map(int, pause_str.split(":"))
-        return round(heures + minutes / 60, 2)
-    else:
-        return float(pause_str)
-
-# Interface utilisateur
-st.set_page_config(page_title="Calculateur Salaire Manpower", layout="wide")
 st.title("🧾 Calculateur de salaire Manpower")
 
 if "data" not in st.session_state:
@@ -52,7 +146,13 @@ with col1:
         st.session_state.data.append(result)
 
     if st.button("Vider le formulaire"):
-        st.session_state.clear()
+        st.session_state.nom = ""
+        st.session_state.numero_mission = ""
+        st.session_state.tarif_horaire = 0.0
+        st.session_state.date = datetime.today()
+        st.session_state.heure_debut = time(8, 0)
+        st.session_state.heure_fin = time(17, 0)
+        st.session_state.pause_str = "0:00"
         st.rerun()
 
 with col2:
@@ -62,19 +162,16 @@ with col2:
         st.markdown(
             f"""
             <div style='background-color:#ffe6f0;padding:10px;border-radius:10px;'>
-                <b>Mission :</b> {dernier['Mission']}  
-                <b>Date :</b> {dernier['Date']}  
-                <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}  
-                <b>Nom :</b> {dernier['Nom']}  
-                <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']:.2f}  
-                <b>Heures brutes :</b> {dernier['Heures brutes']:.2f} h  
-                <b>Pause :</b> {pause_str}  
-                <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']} h)  
-                <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}  
-                <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}  
-                <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}  
-                <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}  
-                <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}  
+                <b>Mission :</b> {dernier['Mission']} — <b>Date :</b> {dernier['Date']}<br>
+                <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}<br>
+                <b>Nom :</b> {dernier['Nom']} — <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']:.2f}<br>
+                <b>Pause :</b> {dernier['Pause (h)']} h<br>
+                <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']:.2f} h)<br>
+                <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}<br>
+                <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration 25% (heure sup)']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
+                <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}<br>
+                <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}<br>
+                <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}<br>
                 <b>Total brut :</b> <span style='font-weight:bold;'>CHF {dernier['Salaire total brut']:.2f}</span>
             </div>
             """,
