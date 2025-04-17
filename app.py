@@ -67,7 +67,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
             "nuit": 8.40 if is_nuit else 0,
             "dimanche": 4.80 if is_dimanche else 0,
             "samedi": 2.40 if is_samedi else 0,
-            "sup": tarif_horaire * 0.25 if minute_in_hour >= 9.5 else 0
+            "sup": tarif_horaire * 0.25 if minute_in_hour >= 9.5 and not (is_nuit or is_dimanche or is_samedi) else 0
         }
 
         max_cat = max(taux_majorations, key=taux_majorations.get)
