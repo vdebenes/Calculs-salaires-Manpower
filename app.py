@@ -144,25 +144,35 @@ col_form, col_recap = st.columns([1, 1])
 
 with col_form:
     with st.form("salaire_form"):
-        nom = st.text_input("Nom du collaborateur")
-        numero_mission = st.text_input("Numéro de mission")
-        date = st.date_input("Date de la mission")
+        nom = st.text_input("Nom du collaborateur", key="nom")
+        numero_mission = st.text_input("Numéro de mission", key="mission")
+        date = st.date_input("Date de la mission", key="date")
         tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05,
-            value=st.session_state.tarifs_par_nom.get(nom, 0.0))
-        heure_debut = st.time_input("Heure de début", time(8, 0))
-        heure_fin = st.time_input("Heure de fin", time(17, 0))
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-        submit = st.form_submit_button("Ajouter")
+            value=st.session_state.tarifs_par_nom.get(nom, 0.0), key="tarif")
+        heure_debut = st.time_input("Heure de début", time(8, 0), key="debut")
+        heure_fin = st.time_input("Heure de fin", time(17, 0), key="fin")
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00", key="pause")
+        col_submit, col_reset = st.columns([1, 1])
+        with col_submit:
+            submit = st.form_submit_button("Ajouter")
+        with col_reset:
+            reset = st.form_submit_button("Vider le formulaire")
+
+if reset:
+    st.session_state.nom = ""
+    st.session_state.mission = ""
+    st.session_state.date = datetime.today().date()
+    st.session_state.tarif = 0.0
+    st.session_state.debut = time(8, 0)
+    st.session_state.fin = time(17, 0)
+    st.session_state.pause = "0:00"
+    st.experimental_rerun()
 
 if submit:
-    pause = convert_pause_to_decimal(pause_str)
-    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    pause = convert_pause_to_decimal(st.session_state.pause)
+    result = calcul_salaire(st.session_state.nom, st.session_state.date, st.session_state.tarif, st.session_state.debut.strftime("%H:%M"), st.session_state.fin.strftime("%H:%M"), pause, st.session_state.mission)
     st.session_state.missions.append(result)
-    st.session_state.tarifs_par_nom[nom] = tarif_horaire
-
-if st.button("🗑️ Vider toutes les lignes"):
-    st.session_state.missions.clear()
-    st.experimental_rerun()
+    st.session_state.tarifs_par_nom[st.session_state.nom] = st.session_state.tarif
 
 if st.session_state.missions:
     df_all = pd.DataFrame(st.session_state.missions)
