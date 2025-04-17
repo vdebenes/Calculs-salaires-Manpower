@@ -141,13 +141,13 @@ st.title("Calculateur de salaire Manpower")
 col1, col2 = st.columns(2)
 
 with col1:
+    numero_mission = st.text_input("Numéro de mission")
     nom = st.text_input("Nom")
     tarif_horaire = st.number_input("Tarif horaire", value=st.session_state.tarifs_par_nom.get(nom, 0.0), step=0.01)
     date = st.date_input("Date")
     heure_debut = st.time_input("Heure de début", value=time(8, 0))
     heure_fin = st.time_input("Heure de fin", value=time(17, 0))
     pause = st.text_input("Pause (hh:mm ou décimale)", value="0:00")
-    numero_mission = st.text_input("Numéro de mission")
 
 with col2:
     st.markdown("### Résumé de la dernière mission", unsafe_allow_html=True)
@@ -183,7 +183,8 @@ with col_submit:
 
 with col_reset:
     if st.button("Vider le formulaire"):
-        st.experimental_rerun()
+        st.session_state.clear()
+        st.rerun()
 
 st.markdown("---")
 
@@ -194,8 +195,8 @@ if st.session_state.missions:
     for i in range(len(df_result)):
         if st.button(f"🗑️ Supprimer ligne {i+1}", key=f"delete_{i}"):
             st.session_state.missions.pop(i)
-            st.experimental_rerun()
+            st.rerun()
 
     if st.button("🧹 Vider toutes les lignes du tableau"):
         st.session_state.missions = []
-        st.experimental_rerun()
+        st.rerun()
