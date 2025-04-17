@@ -5,6 +5,14 @@ import io
 
 st.set_page_config(page_title="Calculateur de salaire Manpower", layout="wide")
 
+st.markdown("""
+    <style>
+    .stTextInput, .stNumberInput, .stDateInput, .stTimeInput {
+        max-width: 400px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 @st.cache_data
 def init_data():
     return []
@@ -152,10 +160,14 @@ if st.session_state.missions:
         width=800
     )
 
-    for i, item in enumerate(st.session_state.missions):
-        if st.button(f"Supprimer ligne {i+1}", key=f"suppr_{i}"):
-            st.session_state.missions.pop(i)
-            st.experimental_rerun()
+    for i in range(len(st.session_state.missions)):
+        col1, col2 = st.columns([10, 1])
+        with col1:
+            st.write(f"Ligne {i+1} – {st.session_state.missions[i]['Nom']} – {st.session_state.missions[i]['Date']}")
+        with col2:
+            if st.button("❌", key=f"suppr_{i}"):
+                st.session_state.missions.pop(i)
+                st.experimental_rerun()
 
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
