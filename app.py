@@ -12,6 +12,9 @@ def init_data():
 if "missions" not in st.session_state:
     st.session_state.missions = []
 
+if "tarifs_par_nom" not in st.session_state:
+    st.session_state.tarifs_par_nom = {}
+
 def convert_pause_to_decimal(pause_str):
     try:
         if ":" in pause_str:
@@ -126,7 +129,8 @@ with st.form("salaire_form"):
     nom = st.text_input("Nom du collaborateur")
     numero_mission = st.text_input("Numéro de mission")
     date = st.date_input("Date de la mission")
-    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+    tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05,
+        value=st.session_state.tarifs_par_nom.get(nom, 0.0))
     heure_debut = st.time_input("Heure de début", time(8, 0))
     heure_fin = st.time_input("Heure de fin", time(17, 0))
     pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
@@ -136,6 +140,7 @@ if submit:
     pause = convert_pause_to_decimal(pause_str)
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
     st.session_state.missions.append(result)
+    st.session_state.tarifs_par_nom[nom] = tarif_horaire
 
 if st.session_state.missions:
     df_all = pd.DataFrame(st.session_state.missions)
