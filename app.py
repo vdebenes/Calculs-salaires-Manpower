@@ -63,21 +63,23 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         is_samedi = jour_semaine == "Samedi"
         minute_in_hour = minute_count / 60
 
-        sup_possible = minute_in_hour >= 9.5 and not (is_nuit or is_dimanche or is_samedi)
-
         if is_nuit:
             heures_nuit += 1 / 60
         elif is_dimanche:
             heures_dimanche += 1 / 60
         elif is_samedi:
             heures_samedi += 1 / 60
-        elif sup_possible:
+        elif minute_in_hour >= 9.5:
             heures_sup += 1 / 60
         else:
             heures_normales += 1 / 60
 
         current += timedelta(minutes=1)
         minute_count += 1
+
+    # Supprimer les heures supplémentaires si des majorations ont déjà été comptées
+    if heures_nuit > 0 or heures_samedi > 0 or heures_dimanche > 0:
+        heures_sup = 0.0
 
     salaire_base = round(total_heures * tarif_horaire, 2)
     maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
@@ -108,77 +110,3 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
-
-# Interface utilisateur
-st.title("Calculateur de salaire Manpower")
-
-if "data" not in st.session_state:
-    st.session_state.data = []
-
-col1, col2 = st.columns([2, 3])
-
-with col1:
-    with st.form("formulaire"):
-        numero_mission = st.text_input("Numéro de mission")
-        nom = st.text_input("Nom")
-        tarif_horaire = st.number_input("Tarif horaire", min_value=0.0, step=0.05)
-        date = st.date_input("Date")
-        heure_debut = st.time_input("Heure de début", value=time(8, 0))
-        heure_fin = st.time_input("Heure de fin", value=time(17, 0))
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-
-        col_gauche, col_droite = st.columns([1, 1])
-        with col_gauche:
-            submit = st.form_submit_button("Calculer salaire")
-        with col_droite:
-            if st.form_submit_button("Vider le formulaire"):
-                st.experimental_rerun()
-
-with col2:
-    if st.session_state.data:
-        dernier = st.session_state.data[-1]
-        st.markdown(
-            f"""
-            <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
-            <b>Mission :</b> {dernier['Mission']} — <b>Date :</b> {dernier['Date']} — <b>Heure de début :</b> {dernier['Heure de début']} — <b>Heure de fin :</b> {dernier['Heure de fin']}<br>
-            <b>Nom :</b> {dernier['Nom']} — <b>Tarif horaire :</b> CHF {dernier['Tarif horaire']} — <b>Pause :</b> {dernier['Pause (h)']} h<br>
-            <b>Heures totales :</b> {dernier['Heures totales (hh:mm)']} (soit {dernier['Heures totales']:.2f} h)<br>
-            <b>Salaire de base :</b> CHF {dernier['Salaire de base']:.2f}<br>
-            <b>Majoration 25% (heure sup) :</b> CHF {dernier['Majoration heures sup']:.2f} — <b>Heures sup :</b> {dernier['Heures sup (hh:mm)']}<br>
-            <b>Heures samedi :</b> {dernier['Heures samedi (hh:mm)']} — <b>Majoration samedi :</b> CHF {dernier['Majoration samedi']:.2f}<br>
-            <b>Heures dimanche :</b> {dernier['Heures dimanche (hh:mm)']} — <b>Majoration dimanche :</b> CHF {dernier['Majoration dimanche']:.2f}<br>
-            <b>Heures de nuit :</b> {dernier['Heures de nuit (hh:mm)']} — <b>Majoration nuit :</b> CHF {dernier['Majoration nuit']:.2f}<br>
-            <b>Total brut :</b> <b>CHF {dernier['Salaire total brut']:.2f}</b>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-if submit:
-    pause = convert_pause_to_decimal(pause_str)
-    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
-    st.session_state.data.append(result)
-
-if st.session_state.data:
-    df_result = pd.DataFrame(st.session_state.data)
-    for i, row in df_result.iterrows():
-        delete = st.button(f"Supprimer la ligne {i+1}", key=f"delete_{i}")
-        if delete:
-            st.session_state.data.pop(i)
-            st.experimental_rerun()
-
-    st.dataframe(df_result, use_container_width=True, height=250)
-
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_result.to_excel(writer, index=False, sheet_name="Salaire")
-        worksheet = writer.sheets["Salaire"]
-        for idx, col in enumerate(df_result.columns):
-            worksheet.set_column(idx, idx, max(15, len(col) + 2))
-
-    st.download_button(
-        label="🗕️ Télécharger le tableau Excel",
-        data=buffer.getvalue(),
-        file_name="salaire_calculé.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
