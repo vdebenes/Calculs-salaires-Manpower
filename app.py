@@ -50,8 +50,8 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         h = current.time()
         jour_actuel = current.date()
         is_jour_ferie = jour_actuel in jours_feries
-        is_dimanche = jour_actuel.weekday() == 6 or is_jour_ferie
-        is_samedi = jour_actuel.weekday() == 5
+        is_dimanche = current.weekday() == 6 or is_jour_ferie
+        is_samedi = current.weekday() == 5
         is_nuit = h >= time(23, 0) or h < time(6, 0)
 
         if is_nuit:
@@ -69,9 +69,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    heures_sup_finales = 0.0
-    if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
-        heures_sup_finales = heures_sup
+    heures_sup_finales = heures_sup if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0 else 0.0
 
     total_heures = round((worked_minutes / 60), 2)
     salaire_base = round(total_heures * tarif_horaire, 2)
@@ -111,13 +109,13 @@ if "tableau_missions" not in st.session_state:
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
-        nom = st.text_input("Nom du collaborateur")
-        numero_mission = st.text_input("Numéro de mission")
-        date = st.date_input("Date de la mission")
-        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+        nom = st.text_input("Nom du collaborateur", value="Tomé Ernestine")
+        numero_mission = st.text_input("Numéro de mission", value="274 569")
+        date = st.date_input("Date de la mission", value=datetime(2025, 4, 13))  # DIMANCHE
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=69.32)
     with col2:
-        heure_debut = st.time_input("Heure de début", time(8, 0))
-        heure_fin = st.time_input("Heure de fin", time(17, 0))
+        heure_debut = st.time_input("Heure de début", time(19, 15))
+        heure_fin = st.time_input("Heure de fin", time(8, 0))
         pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
     submit = st.form_submit_button("Calculer")
 
