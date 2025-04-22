@@ -143,6 +143,25 @@ if submit:
     pause = convert_pause_to_decimal(pause_str)
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
     st.session_state.tableau_missions.append(result)
+# Affichage du tableau complet (toutes les missions ajoutées)
+st.markdown("### 📋 Toutes les missions enregistrées")
+df_result = pd.DataFrame(st.session_state.tableau_missions)
+st.dataframe(df_result, use_container_width=True, height=300)
+
+# Export complet
+buffer_all = io.BytesIO()
+with pd.ExcelWriter(buffer_all, engine='xlsxwriter') as writer:
+    df_result.to_excel(writer, index=False, sheet_name="Toutes les missions")
+    worksheet = writer.sheets["Toutes les missions"]
+    for idx, col in enumerate(df_result.columns):
+        worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
+st.download_button(
+    label="📅 Télécharger toutes les missions en Excel",
+    data=buffer_all.getvalue(),
+    file_name="missions_toutes.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
     st.markdown(
         f"""
