@@ -61,10 +61,11 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
                 heures_dimanche += 1 / 60
             elif is_samedi:
                 heures_samedi += 1 / 60
-            elif minute_count / 60 >= 9.5:
-                heures_sup += 1 / 60
-            else:
-                heures_normales += 1 / 60
+            elif not (is_dimanche or is_samedi or is_jour_ferie):
+                if minute_count / 60 >= 9.5:
+                    heures_sup += 1 / 60
+                else:
+                    heures_normales += 1 / 60
 
         current += timedelta(minutes=1)
         minute_count += 1
