@@ -146,3 +146,18 @@ if submit:
         """,
         unsafe_allow_html=True
     )
+
+    df_result = pd.DataFrame([result])
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name="Salaire")
+        worksheet = writer.sheets["Salaire"]
+        for idx, col in enumerate(df_result.columns):
+            worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
+    st.download_button(
+        label="\ud83d\udcc5 Télécharger le résultat en Excel",
+        data=buffer.getvalue(),
+        file_name="salaire_calculé.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
