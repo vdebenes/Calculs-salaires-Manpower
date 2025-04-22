@@ -45,6 +45,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
     current = heure_debut
     minute_count = 0
+
     while minute_count < worked_minutes:
         h = current.time()
         jour_actuel = current.date()
@@ -101,55 +102,26 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-# Initialisation des valeurs par défaut
-if "nom_defaut" not in st.session_state:
-    st.session_state.nom_defaut = "Tomé Ernestine"
-    st.session_state.numero_mission_defaut = "274 569"
-    st.session_state.date_mission_defaut = datetime(2025, 4, 13)
-    st.session_state.heure_debut_defaut = time(19, 15)
-    st.session_state.heure_fin_defaut = time(8, 0)
-    st.session_state.pause_defaut = "0:00"
-
+# Interface utilisateur
 if "tableau_missions" not in st.session_state:
     st.session_state.tableau_missions = []
+
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
-        nom = st.text_input("Nom du collaborateur", value=st.session_state.nom_defaut, key="nom")
-        numero_mission = st.text_input("Numéro de mission", value=st.session_state.numero_mission_defaut, key="numero_mission")
-        date = st.date_input("Date de la mission", value=st.session_state.date_mission_defaut, key="date_mission")
+        nom = st.text_input("Nom du collaborateur", value="Tomé Ernestine")
+        numero_mission = st.text_input("Numéro de mission", value="274 569")
+        date = st.date_input("Date de la mission", value=datetime(2025, 4, 13))  # DIMANCHE
         tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=69.32)
     with col2:
-        heure_debut = st.time_input("Heure de début", value=st.session_state.heure_debut_defaut, key="heure_debut")
-        heure_fin = st.time_input("Heure de fin", value=st.session_state.heure_fin_defaut, key="heure_fin")
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value=st.session_state.pause_defaut, key="pause")
-
-    col_submit, col_reset = st.columns([1, 1])
-    with col_submit:
-        submit = st.form_submit_button("✅ Calculer")
-    with col_reset:
-        reset = st.form_submit_button("🧹 Vider le formulaire")
-
-if reset:
-    st.session_state.nom_defaut = ""
-    st.session_state.numero_mission_defaut = ""
-    st.session_state.date_mission_defaut = datetime.today()
-    st.session_state.heure_debut_defaut = time(8, 0)
-    st.session_state.heure_fin_defaut = time(17, 0)
-    st.session_state.pause_defaut = "0:00"
-    st.experimental_rerun()
+        heure_debut = st.time_input("Heure de début", time(19, 15))
+        heure_fin = st.time_input("Heure de fin", time(8, 0))
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    submit = st.form_submit_button("Calculer")
 
 if submit:
     pause = convert_pause_to_decimal(pause_str)
-    result = calcul_salaire(
-        nom,
-        date,
-        tarif_horaire,
-        heure_debut.strftime("%H:%M"),
-        heure_fin.strftime("%H:%M"),
-        pause,
-        numero_mission
-    )
+    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
     st.session_state.tableau_missions.append(result)
 
     st.markdown(
@@ -170,25 +142,7 @@ if submit:
         unsafe_allow_html=True
     )
 
-
-    st.markdown(
-        f"""
-        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
-        <b>Résumé :</b><br>
-        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
-        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
-        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
-        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
-        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
-        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
-        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
-        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
-        <b>Total brut : {result['Salaire total brut']:.2f} CHF</b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
+# Affichage interactif des missions + suppression + export
 if st.session_state.tableau_missions:
     st.markdown("### ✏️ Gérer les missions enregistrées")
 
@@ -213,5 +167,22 @@ if st.session_state.tableau_missions:
             st.experimental_rerun()
 
     if lignes_a_conserver:
-       df_filtered = pd.DataFrame(lignes_a_conserver)
+        df_filtered = pd.DataFrame(lignes_a_conserver)
+        st.markdown("### ✅ Missions sélectionnées pour l’export")
+        st.dataframe(df_filtered, use_container_width=True, height=300)
 
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+            df_filtered.to_excel(writer, index=False, sheet_name="Missions sélectionnées")
+            worksheet = writer.sheets["Missions sélectionnées"]
+            for idx, col in enumerate(df_filtered.columns):
+                worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
+        st.download_button(
+            label="📁 Télécharger les lignes sélectionnées en Excel",
+            data=buffer.getvalue(),
+            file_name="missions_selectionnees.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    else:
+        st.info("Aucune ligne sélectionnée pour l’export.")
