@@ -144,6 +144,7 @@ if submit:
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
     st.session_state.tableau_missions.append(result)
 # Affichage du tableau complet (toutes les missions ajoutées)
+
 st.markdown("### 📋 Toutes les missions enregistrées")
 df_result = pd.DataFrame(st.session_state.tableau_missions)
 st.dataframe(df_result, use_container_width=True, height=300)
