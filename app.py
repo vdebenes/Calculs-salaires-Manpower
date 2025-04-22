@@ -57,8 +57,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         # Majoration nuit toujours comptée
         if is_nuit:
             heures_nuit += 1 / 60
-        # Majoration jour uniquement hors nuit
-        if not is_nuit:
+        else:
             if is_dimanche:
                 heures_dimanche += 1 / 60
             elif is_samedi:
