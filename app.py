@@ -77,7 +77,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    # Supprimer les heures supplémentaires si des majorations ont déjà été comptées
     if heures_nuit > 0 or heures_samedi > 0 or heures_dimanche > 0:
         heures_sup = 0.0
 
@@ -111,7 +110,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-# Interface utilisateur
+if 'historique' not in st.session_state:
+    st.session_state.historique = []
+
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -128,6 +129,7 @@ with st.form("salaire_form"):
 if submit:
     pause = convert_pause_to_decimal(pause_str)
     result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    st.session_state.historique.append(result)
 
     st.markdown(
         f"""
@@ -147,17 +149,27 @@ if submit:
         unsafe_allow_html=True
     )
 
-    df_result = pd.DataFrame([result])
+if st.session_state.historique:
+    st.subheader("Historique des missions")
+    df_historique = pd.DataFrame(st.session_state.historique)
+    lignes_a_supprimer = st.multiselect("Sélectionner les lignes à supprimer", df_historique.index.tolist())
+
+    if st.button("Supprimer les lignes sélectionnées"):
+        st.session_state.historique = [ligne for idx, ligne in enumerate(st.session_state.historique) if idx not in lignes_a_supprimer]
+        st.experimental_rerun()
+
+    st.dataframe(df_historique, use_container_width=True)
+
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_result.to_excel(writer, index=False, sheet_name="Salaire")
-        worksheet = writer.sheets["Salaire"]
-        for idx, col in enumerate(df_result.columns):
+        df_historique.to_excel(writer, index=False, sheet_name="Historique")
+        worksheet = writer.sheets["Historique"]
+        for idx, col in enumerate(df_historique.columns):
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="Télécharger le résultat en Excel",
+        label="📥 Télécharger l'historique en Excel",
         data=buffer.getvalue(),
-        file_name="salaire_calculé.xlsx",
+        file_name="historique_salaire.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
