@@ -111,3 +111,17 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
+
+# Interface utilisateur
+with st.form("salaire_form"):
+    col1, col2 = st.columns(2)
+    with col1:
+        nom = st.text_input("Nom du collaborateur")
+        numero_mission = st.text_input("Numéro de mission")
+        date = st.date_input("Date de la mission")
+        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
+    with col2:
+        heure_debut = st.time_input("Heure de début", time(8, 0))
+        heure_fin = st.time_input("Heure de fin", time(17, 0))
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
+    submit = st.form_submit_button("Calculer")
