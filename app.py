@@ -156,7 +156,7 @@ if submit:
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="\ud83d\udcc5 Télécharger le résultat en Excel",
+        label="Télécharger le résultat en Excel",
         data=buffer.getvalue(),
         file_name="salaire_calculé.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
