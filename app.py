@@ -27,13 +27,10 @@ def format_minutes(decimal_hours):
     return f"{heures}:{minutes:02d}"
 
 def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, numero_mission):
-    heure_debut = datetime.strptime(heure_debut, "%H:%M")
-    heure_fin = datetime.strptime(heure_fin, "%H:%M")
+    heure_debut = datetime.combine(date, datetime.strptime(heure_debut, "%H:%M").time())
+    heure_fin = datetime.combine(date, datetime.strptime(heure_fin, "%H:%M").time())
     if heure_fin <= heure_debut:
         heure_fin += timedelta(days=1)
-
-    heures_brutes = (heure_fin - heure_debut).total_seconds() / 3600
-    total_heures = heures_brutes - pause
 
     jours_feries = {
         date_class(2025, 1, 1), date_class(2025, 4, 18), date_class(2025, 4, 21),
@@ -42,19 +39,19 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     }
 
     heures_nuit = heures_dimanche = heures_samedi = heures_sup = heures_normales = 0.0
-    current = heure_debut
     pause_minutes = int(pause * 60)
     total_minutes = int((heure_fin - heure_debut).total_seconds() / 60)
     worked_minutes = total_minutes - pause_minutes
+
+    current = heure_debut
     minute_count = 0
 
     while minute_count < worked_minutes:
         h = current.time()
-        current_day = (date + timedelta(days=(current.date() - date).days))
-        jour_nom = current_day.strftime("%A")
-        is_jour_ferie = current_day in jours_feries
-        is_dimanche = jour_nom == "Sunday" or is_jour_ferie
-        is_samedi = jour_nom == "Saturday"
+        jour_actuel = current.date()
+        is_jour_ferie = jour_actuel in jours_feries
+        is_dimanche = current.weekday() == 6 or is_jour_ferie
+        is_samedi = current.weekday() == 5
         is_nuit = h >= time(23, 0) or h < time(6, 0)
 
         if is_nuit:
@@ -75,6 +72,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
         heures_sup_finales = heures_sup
 
+    total_heures = round((worked_minutes / 60), 2)
     salaire_base = round(total_heures * tarif_horaire, 2)
     maj_sup = round(heures_sup_finales * tarif_horaire * 0.25, 2)
     maj_nuit = round(8.40 * heures_nuit, 2)
@@ -90,7 +88,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Heure de fin": heure_fin.strftime("%H:%M"),
         "Tarif horaire": tarif_horaire,
         "Pause (h)": round(pause, 2),
-        "Heures totales": round(total_heures, 2),
+        "Heures totales": total_heures,
         "Heures totales (hh:mm)": format_minutes(total_heures),
         "Salaire de base": salaire_base,
         "Majoration 25% (heure sup)": round(tarif_horaire * 0.25, 2),
