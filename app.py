@@ -59,11 +59,10 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     while minute_count < worked_minutes:
         h = current.time()
         is_nuit = h >= time(23, 0) or h < time(6, 0)
-        current_day = (date + timedelta(days=1)) if h < time(6, 0) else date
-        jour_en_courant = pd.Timestamp(current_day).day_name().lower()
-        jour_semaine_courant = jours_fr.get(jour_en_courant, jour_en_courant.capitalize())
-        is_dimanche = jour_semaine_courant == "Dimanche" or current_day in jours_feries
-        is_samedi = jour_semaine_courant == "Samedi"
+        jour_actuel = (date + timedelta(days=(current.date() - date).days)).weekday()
+        jour_actuel_nom = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"][jour_actuel]
+        is_dimanche = jour_actuel_nom == "Dimanche" or is_jour_ferie
+        is_samedi = jour_actuel_nom == "Samedi"
         minute_in_hour = minute_count / 60
 
         if is_nuit:
@@ -114,6 +113,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
+# Interface utilisateur
 if "tableau_missions" not in st.session_state:
     st.session_state.tableau_missions = []
 
@@ -165,7 +165,7 @@ if st.session_state.tableau_missions:
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="📅 Télécharger le tableau en Excel",
+        label="📥 Télécharger le tableau en Excel",
         data=buffer.getvalue(),
         file_name="missions_salaire.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
