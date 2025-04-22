@@ -141,28 +141,35 @@ if reset:
 
 if submit:
     pause = convert_pause_to_decimal(pause_str)
-    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    result = calcul_salaire(
+        nom,
+        date,
+        tarif_horaire,
+        heure_debut.strftime("%H:%M"),
+        heure_fin.strftime("%H:%M"),
+        pause,
+        numero_mission
+    )
     st.session_state.tableau_missions.append(result)
-# Affichage du tableau complet (toutes les missions ajoutées)
 
-st.markdown("### 📋 Toutes les missions enregistrées")
-df_result = pd.DataFrame(st.session_state.tableau_missions)
-st.dataframe(df_result, use_container_width=True, height=300)
+    st.markdown(
+        f"""
+        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
+        <b>Résumé :</b><br>
+        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
+        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
+        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
+        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
+        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
+        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
+        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
+        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
+        <b>Total brut : {result['Salaire total brut']:.2f} CHF</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-# Export complet
-buffer_all = io.BytesIO()
-with pd.ExcelWriter(buffer_all, engine='xlsxwriter') as writer:
-    df_result.to_excel(writer, index=False, sheet_name="Toutes les missions")
-    worksheet = writer.sheets["Toutes les missions"]
-    for idx, col in enumerate(df_result.columns):
-        worksheet.set_column(idx, idx, max(15, len(col) + 2))
-
-st.download_button(
-    label="📅 Télécharger toutes les missions en Excel",
-    data=buffer_all.getvalue(),
-    file_name="missions_toutes.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
 
     st.markdown(
         f"""
