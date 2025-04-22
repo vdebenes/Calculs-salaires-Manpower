@@ -35,19 +35,11 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     heures_brutes = (heure_fin - heure_debut).total_seconds() / 3600
     total_heures = heures_brutes - pause
 
-    jour_en = pd.Timestamp(date).day_name().lower()
-    jours_fr = {
-        "monday": "Lundi", "tuesday": "Mardi", "wednesday": "Mercredi",
-        "thursday": "Jeudi", "friday": "Vendredi", "saturday": "Samedi", "sunday": "Dimanche"
-    }
-    jour_semaine = jours_fr.get(jour_en, jour_en.capitalize())
-
     jours_feries = {
         date_class(2025, 1, 1), date_class(2025, 4, 18), date_class(2025, 4, 21),
         date_class(2025, 5, 29), date_class(2025, 6, 9), date_class(2025, 8, 1),
         date_class(2025, 9, 22), date_class(2025, 12, 25)
     }
-    is_jour_ferie = date in jours_feries
 
     heures_nuit = heures_dimanche = heures_samedi = heures_sup = heures_normales = 0.0
     current = heure_debut
@@ -58,12 +50,12 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
     while minute_count < worked_minutes:
         h = current.time()
+        current_day = (date + timedelta(days=(current.date() - date).days))
+        jour_nom = current_day.strftime("%A")
+        is_jour_ferie = current_day in jours_feries
+        is_dimanche = jour_nom == "Sunday" or is_jour_ferie
+        is_samedi = jour_nom == "Saturday"
         is_nuit = h >= time(23, 0) or h < time(6, 0)
-        jour_actuel = (date + timedelta(days=(current.date() - date).days)).weekday()
-        jour_actuel_nom = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"][jour_actuel]
-        is_dimanche = jour_actuel_nom == "Dimanche" or is_jour_ferie
-        is_samedi = jour_actuel_nom == "Samedi"
-        minute_in_hour = minute_count / 60
 
         if is_nuit:
             heures_nuit += 1 / 60
@@ -71,7 +63,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
             heures_dimanche += 1 / 60
         elif is_samedi:
             heures_samedi += 1 / 60
-        elif minute_in_hour >= 9.5:
+        elif minute_count / 60 >= 9.5:
             heures_sup += 1 / 60
         else:
             heures_normales += 1 / 60
@@ -165,7 +157,7 @@ if st.session_state.tableau_missions:
             worksheet.set_column(idx, idx, max(15, len(col) + 2))
 
     st.download_button(
-        label="📥 Télécharger le tableau en Excel",
+        label="📅 Télécharger le tableau en Excel",
         data=buffer.getvalue(),
         file_name="missions_salaire.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
