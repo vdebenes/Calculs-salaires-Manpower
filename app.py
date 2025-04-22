@@ -61,7 +61,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         elif is_samedi:
             heures_samedi += 1 / 60
         else:
-            if minute_count / 60 >= 9.5:
+            if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0 and minute_count / 60 >= 9.5:
                 heures_sup += 1 / 60
             else:
                 heures_normales += 1 / 60
