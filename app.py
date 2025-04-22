@@ -77,11 +77,13 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    if heures_nuit > 0 or heures_samedi > 0 or heures_dimanche > 0:
-        heures_sup = 0.0
+    # Règle : si une minute est nuit, samedi, dimanche ou jour férié, elle n'est pas heure sup
+    heures_sup_finales = 0.0
+    if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
+        heures_sup_finales = heures_sup
 
     salaire_base = round(total_heures * tarif_horaire, 2)
-    maj_sup = round(heures_sup * tarif_horaire * 0.25, 2)
+    maj_sup = round(heures_sup_finales * tarif_horaire * 0.25, 2)
     maj_nuit = round(8.40 * heures_nuit, 2)
     maj_dimanche = round(4.80 * heures_dimanche, 2)
     maj_samedi = round(2.40 * heures_samedi, 2)
@@ -99,7 +101,7 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Heures totales (hh:mm)": format_minutes(total_heures),
         "Salaire de base": salaire_base,
         "Majoration 25% (heure sup)": round(tarif_horaire * 0.25, 2),
-        "Heures sup (hh:mm)": format_minutes(heures_sup),
+        "Heures sup (hh:mm)": format_minutes(heures_sup_finales),
         "Heures samedi (hh:mm)": format_minutes(heures_samedi),
         "Heures dimanche (hh:mm)": format_minutes(heures_dimanche),
         "Heures de nuit (hh:mm)": format_minutes(heures_nuit),
@@ -109,67 +111,3 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Majoration nuit": maj_nuit,
         "Salaire total brut": total_brut
     }
-
-if 'historique' not in st.session_state:
-    st.session_state.historique = []
-
-with st.form("salaire_form"):
-    col1, col2 = st.columns(2)
-    with col1:
-        nom = st.text_input("Nom du collaborateur")
-        numero_mission = st.text_input("Numéro de mission")
-        date = st.date_input("Date de la mission")
-        tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05)
-    with col2:
-        heure_debut = st.time_input("Heure de début", time(8, 0))
-        heure_fin = st.time_input("Heure de fin", time(17, 0))
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-    submit = st.form_submit_button("Calculer")
-
-if submit:
-    pause = convert_pause_to_decimal(pause_str)
-    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
-    st.session_state.historique.append(result)
-
-    st.markdown(
-        f"""
-        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
-        <b>Résumé :</b><br>
-        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
-        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
-        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
-        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
-        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
-        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
-        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
-        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
-        <b>Total brut : {result['Salaire total brut']:.2f} CHF</b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-if st.session_state.historique:
-    st.subheader("Historique des missions")
-    df_historique = pd.DataFrame(st.session_state.historique)
-    lignes_a_supprimer = st.multiselect("Sélectionner les lignes à supprimer", df_historique.index.tolist())
-
-    if st.button("Supprimer les lignes sélectionnées"):
-        st.session_state.historique = [ligne for idx, ligne in enumerate(st.session_state.historique) if idx not in lignes_a_supprimer]
-        st.experimental_rerun()
-
-    st.dataframe(df_historique, use_container_width=True)
-
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-        df_historique.to_excel(writer, index=False, sheet_name="Historique")
-        worksheet = writer.sheets["Historique"]
-        for idx, col in enumerate(df_historique.columns):
-            worksheet.set_column(idx, idx, max(15, len(col) + 2))
-
-    st.download_button(
-        label="📥 Télécharger l'historique en Excel",
-        data=buffer.getvalue(),
-        file_name="historique_salaire.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
