@@ -45,7 +45,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
     current = heure_debut
     minute_count = 0
-
     while minute_count < worked_minutes:
         h = current.time()
         jour_actuel = current.date()
@@ -102,22 +101,43 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-# Interface utilisateur
+# Initialisation des champs de formulaire
+if "form_reset" not in st.session_state:
+    st.session_state.nom = "Tomé Ernestine"
+    st.session_state.numero_mission = "274 569"
+    st.session_state.date_mission = datetime(2025, 4, 13)
+    st.session_state.heure_debut = time(19, 15)
+    st.session_state.heure_fin = time(8, 0)
+    st.session_state.pause = "0:00"
+
 if "tableau_missions" not in st.session_state:
     st.session_state.tableau_missions = []
-
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
-        nom = st.text_input("Nom du collaborateur", value="Tomé Ernestine")
-        numero_mission = st.text_input("Numéro de mission", value="274 569")
-        date = st.date_input("Date de la mission", value=datetime(2025, 4, 13))  # DIMANCHE
+        nom = st.text_input("Nom du collaborateur", value=st.session_state.nom, key="nom")
+        numero_mission = st.text_input("Numéro de mission", value=st.session_state.numero_mission, key="numero_mission")
+        date = st.date_input("Date de la mission", value=st.session_state.date_mission, key="date_mission")
         tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=69.32)
     with col2:
-        heure_debut = st.time_input("Heure de début", time(19, 15))
-        heure_fin = st.time_input("Heure de fin", time(8, 0))
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
-    submit = st.form_submit_button("Calculer")
+        heure_debut = st.time_input("Heure de début", value=st.session_state.heure_debut, key="heure_debut")
+        heure_fin = st.time_input("Heure de fin", value=st.session_state.heure_fin, key="heure_fin")
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value=st.session_state.pause, key="pause")
+
+    col_submit, col_reset = st.columns([1, 1])
+    with col_submit:
+        submit = st.form_submit_button("✅ Calculer")
+    with col_reset:
+        reset = st.form_submit_button("🧹 Vider le formulaire")
+
+if reset:
+    st.session_state.nom = ""
+    st.session_state.numero_mission = ""
+    st.session_state.date_mission = datetime.today()
+    st.session_state.heure_debut = time(8, 0)
+    st.session_state.heure_fin = time(17, 0)
+    st.session_state.pause = "0:00"
+    st.experimental_rerun()
 
 if submit:
     pause = convert_pause_to_decimal(pause_str)
@@ -142,7 +162,6 @@ if submit:
         unsafe_allow_html=True
     )
 
-# Affichage interactif des missions + suppression + export
 if st.session_state.tableau_missions:
     st.markdown("### ✏️ Gérer les missions enregistrées")
 
