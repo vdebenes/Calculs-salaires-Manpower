@@ -50,11 +50,10 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         h = current.time()
         jour_actuel = current.date()
         is_jour_ferie = jour_actuel in jours_feries
-        is_dimanche = current.weekday() == 6 or is_jour_ferie
-        is_samedi = current.weekday() == 5
+        is_dimanche = jour_actuel.weekday() == 6 or is_jour_ferie
+        is_samedi = jour_actuel.weekday() == 5
         is_nuit = h >= time(23, 0) or h < time(6, 0)
 
-        # Majoration nuit toujours comptée
         if is_nuit:
             heures_nuit += 1 / 60
         else:
@@ -70,7 +69,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    # Supprimer les heures sup si une autre majoration est déjà appliquée
     heures_sup_finales = 0.0
     if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
         heures_sup_finales = heures_sup
