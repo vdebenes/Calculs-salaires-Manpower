@@ -186,4 +186,5 @@ if st.session_state.tableau_missions:
             st.experimental_rerun()
 
     if lignes_a_conserver:
-        df_filtered = pd.DataFrame(lignes_a
+       df_filtered = pd.DataFrame(lignes_a_conserver)
+
