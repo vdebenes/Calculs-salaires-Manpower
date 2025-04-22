@@ -56,20 +56,20 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
 
         if is_nuit:
             heures_nuit += 1 / 60
+        elif is_dimanche:
+            heures_dimanche += 1 / 60
+        elif is_samedi:
+            heures_samedi += 1 / 60
         else:
-            if is_dimanche:
-                heures_dimanche += 1 / 60
-            elif is_samedi:
-                heures_samedi += 1 / 60
-            elif not (is_dimanche or is_samedi or is_jour_ferie):
-                if minute_count / 60 >= 9.5:
-                    heures_sup += 1 / 60
-                else:
-                    heures_normales += 1 / 60
+            if minute_count / 60 >= 9.5:
+                heures_sup += 1 / 60
+            else:
+                heures_normales += 1 / 60
 
         current += timedelta(minutes=1)
         minute_count += 1
 
+    # Pas d'heures sup si une autre majoration est présente
     heures_sup_finales = 0.0
     if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
         heures_sup_finales = heures_sup
