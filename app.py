@@ -77,7 +77,6 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         current += timedelta(minutes=1)
         minute_count += 1
 
-    # Règle : si une minute est nuit, samedi, dimanche ou jour férié, elle n'est pas heure sup
     heures_sup_finales = 0.0
     if heures_nuit == 0 and heures_samedi == 0 and heures_dimanche == 0:
         heures_sup_finales = heures_sup
@@ -113,6 +112,9 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
     }
 
 # Interface utilisateur
+if "tableau_missions" not in st.session_state:
+    st.session_state.tableau_missions = []
+
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -125,3 +127,44 @@ with st.form("salaire_form"):
         heure_fin = st.time_input("Heure de fin", time(17, 0))
         pause_str = st.text_input("Pause (hh:mm ou décimal)", value="0:00")
     submit = st.form_submit_button("Calculer")
+
+if submit:
+    pause = convert_pause_to_decimal(pause_str)
+    result = calcul_salaire(nom, date, tarif_horaire, heure_debut.strftime("%H:%M"), heure_fin.strftime("%H:%M"), pause, numero_mission)
+    st.session_state.tableau_missions.append(result)
+
+    st.markdown(
+        f"""
+        <div style='background-color:#ffe6e6; padding:10px; border-radius:10px; font-size:16px;'>
+        <b>Résumé :</b><br>
+        Mission : {result['Mission']} — Date : {result['Date']} — Heure de début : {result['Heure de début']} — Heure de fin : {result['Heure de fin']}<br>
+        Nom : {result['Nom']} — Tarif horaire : {result['Tarif horaire']} CHF — Pause : {result['Pause (h)']} h<br>
+        Heures totales : {result['Heures totales (hh:mm)']} (soit {result['Heures totales']:.2f} h)<br>
+        Salaire de base : {result['Salaire de base']:.2f} CHF<br>
+        Majoration 25% (heure sup) : {result['Majoration 25% (heure sup)']:.2f} CHF — Heures sup : {result['Heures sup (hh:mm)']}<br>
+        Heures samedi : {result['Heures samedi (hh:mm)']} — Majoration samedi : {result['Majoration samedi']:.2f} CHF<br>
+        Heures dimanche : {result['Heures dimanche (hh:mm)']} — Majoration dimanche : {result['Majoration dimanche']:.2f} CHF<br>
+        Heures de nuit : {result['Heures de nuit (hh:mm)']} — Majoration nuit : {result['Majoration nuit']:.2f} CHF<br>
+        <b>Total brut : {result['Salaire total brut']:.2f} CHF</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+if st.session_state.tableau_missions:
+    df_result = pd.DataFrame(st.session_state.tableau_missions)
+    st.dataframe(df_result, use_container_width=True, height=300)
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_result.to_excel(writer, index=False, sheet_name="Missions")
+        worksheet = writer.sheets["Missions"]
+        for idx, col in enumerate(df_result.columns):
+            worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
+    st.download_button(
+        label="📥 Télécharger le tableau en Excel",
+        data=buffer.getvalue(),
+        file_name="missions_salaire.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
