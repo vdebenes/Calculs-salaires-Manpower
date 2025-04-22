@@ -101,28 +101,28 @@ def calcul_salaire(nom, date, tarif_horaire, heure_debut, heure_fin, pause, nume
         "Salaire total brut": total_brut
     }
 
-# Initialisation des champs de formulaire
-if "form_reset" not in st.session_state:
-    st.session_state.nom = "Tomé Ernestine"
-    st.session_state.numero_mission = "274 569"
-    st.session_state.date_mission = datetime(2025, 4, 13)
-    st.session_state.heure_debut = time(19, 15)
-    st.session_state.heure_fin = time(8, 0)
-    st.session_state.pause = "0:00"
+# Initialisation des valeurs par défaut
+if "nom_defaut" not in st.session_state:
+    st.session_state.nom_defaut = "Tomé Ernestine"
+    st.session_state.numero_mission_defaut = "274 569"
+    st.session_state.date_mission_defaut = datetime(2025, 4, 13)
+    st.session_state.heure_debut_defaut = time(19, 15)
+    st.session_state.heure_fin_defaut = time(8, 0)
+    st.session_state.pause_defaut = "0:00"
 
 if "tableau_missions" not in st.session_state:
     st.session_state.tableau_missions = []
 with st.form("salaire_form"):
     col1, col2 = st.columns(2)
     with col1:
-        nom = st.text_input("Nom du collaborateur", value=st.session_state.nom, key="nom")
-        numero_mission = st.text_input("Numéro de mission", value=st.session_state.numero_mission, key="numero_mission")
-        date = st.date_input("Date de la mission", value=st.session_state.date_mission, key="date_mission")
+        nom = st.text_input("Nom du collaborateur", value=st.session_state.nom_defaut, key="nom")
+        numero_mission = st.text_input("Numéro de mission", value=st.session_state.numero_mission_defaut, key="numero_mission")
+        date = st.date_input("Date de la mission", value=st.session_state.date_mission_defaut, key="date_mission")
         tarif_horaire = st.number_input("Tarif horaire (CHF)", min_value=0.0, step=0.05, value=69.32)
     with col2:
-        heure_debut = st.time_input("Heure de début", value=st.session_state.heure_debut, key="heure_debut")
-        heure_fin = st.time_input("Heure de fin", value=st.session_state.heure_fin, key="heure_fin")
-        pause_str = st.text_input("Pause (hh:mm ou décimal)", value=st.session_state.pause, key="pause")
+        heure_debut = st.time_input("Heure de début", value=st.session_state.heure_debut_defaut, key="heure_debut")
+        heure_fin = st.time_input("Heure de fin", value=st.session_state.heure_fin_defaut, key="heure_fin")
+        pause_str = st.text_input("Pause (hh:mm ou décimal)", value=st.session_state.pause_defaut, key="pause")
 
     col_submit, col_reset = st.columns([1, 1])
     with col_submit:
@@ -131,12 +131,12 @@ with st.form("salaire_form"):
         reset = st.form_submit_button("🧹 Vider le formulaire")
 
 if reset:
-    st.session_state.nom = ""
-    st.session_state.numero_mission = ""
-    st.session_state.date_mission = datetime.today()
-    st.session_state.heure_debut = time(8, 0)
-    st.session_state.heure_fin = time(17, 0)
-    st.session_state.pause = "0:00"
+    st.session_state.nom_defaut = ""
+    st.session_state.numero_mission_defaut = ""
+    st.session_state.date_mission_defaut = datetime.today()
+    st.session_state.heure_debut_defaut = time(8, 0)
+    st.session_state.heure_fin_defaut = time(17, 0)
+    st.session_state.pause_defaut = "0:00"
     st.experimental_rerun()
 
 if submit:
@@ -186,22 +186,4 @@ if st.session_state.tableau_missions:
             st.experimental_rerun()
 
     if lignes_a_conserver:
-        df_filtered = pd.DataFrame(lignes_a_conserver)
-        st.markdown("### ✅ Missions sélectionnées pour l’export")
-        st.dataframe(df_filtered, use_container_width=True, height=300)
-
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-            df_filtered.to_excel(writer, index=False, sheet_name="Missions sélectionnées")
-            worksheet = writer.sheets["Missions sélectionnées"]
-            for idx, col in enumerate(df_filtered.columns):
-                worksheet.set_column(idx, idx, max(15, len(col) + 2))
-
-        st.download_button(
-            label="📁 Télécharger les lignes sélectionnées en Excel",
-            data=buffer.getvalue(),
-            file_name="missions_selectionnees.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    else:
-        st.info("Aucune ligne sélectionnée pour l’export.")
+        df_filtered = pd.DataFrame(lignes_a
