@@ -159,3 +159,4 @@ if st.session_state.tableau_missions:
         file_name="missions_salaire.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+st.dataframe
