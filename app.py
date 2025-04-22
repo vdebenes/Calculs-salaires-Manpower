@@ -160,3 +160,49 @@ if st.session_state.tableau_missions:
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 st.dataframe
+st.markdown("### ✏️ Gérer les missions enregistrées")
+
+# 1. Créer une liste temporaire pour les lignes conservées
+lignes_a_conserver = []
+lignes_a_supprimer = []
+
+# 2. Affichage avec checkbox par ligne
+for i, row in enumerate(st.session_state.tableau_missions):
+    col1, col2 = st.columns([0.05, 0.95])
+    with col1:
+        coche = st.checkbox("", value=True, key=f"ligne_{i}")
+    with col2:
+        st.write(f"**{row['Mission']}** — {row['Nom']} — {row['Date']} — {row['Heure de début']} → {row['Heure de fin']} | {row['Salaire total brut']:.2f} CHF")
+    if coche:
+        lignes_a_conserver.append(row)
+    else:
+        lignes_a_supprimer.append(row)
+
+# 3. Bouton pour supprimer les lignes décochées
+if lignes_a_supprimer:
+    if st.button("🗑️ Supprimer les lignes décochées"):
+        st.session_state.tableau_missions = lignes_a_conserver
+        st.success(f"{len(lignes_a_supprimer)} ligne(s) supprimée(s) avec succès.")
+        st.experimental_rerun()
+
+# 4. Export uniquement des lignes conservées
+if lignes_a_conserver:
+    df_filtered = pd.DataFrame(lignes_a_conserver)
+    st.markdown("### ✅ Missions sélectionnées pour l’export")
+    st.dataframe(df_filtered, use_container_width=True, height=300)
+
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+        df_filtered.to_excel(writer, index=False, sheet_name="Missions sélectionnées")
+        worksheet = writer.sheets["Missions sélectionnées"]
+        for idx, col in enumerate(df_filtered.columns):
+            worksheet.set_column(idx, idx, max(15, len(col) + 2))
+
+    st.download_button(
+        label="📁 Télécharger les lignes sélectionnées en Excel",
+        data=buffer.getvalue(),
+        file_name="missions_selectionnees.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+else:
+    st.info("Aucune ligne sélectionnée pour l’export.")
